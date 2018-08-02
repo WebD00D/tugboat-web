@@ -10,6 +10,20 @@ const reducer = (state, action) => {
     })
   }
 
+  if ( action.type === `SET_TICKETS_BY_PROJECT` ) {
+    return Object.assign({}, state, {
+      ticketsByProject: action.tickets 
+    })
+  }
+
+  if ( action.type === `SET_NEXT_TICKET_NUMBER` ) {
+    return Object.assign({}, state, {
+      nextTicketNumber: action.number 
+    })
+  }
+
+  
+
   if ( action.type === `SET_ACTIVE_PROJECT` ) {
     return Object.assign({}, state, {
       activeProjectId: action.id 
@@ -35,7 +49,9 @@ const initialState = {
   activeProjectId: 'ggtrrfwefkkfkr4',
   nextTicketNumber: 1000,
 
-  tickets: [ ],
+  tickets: [ ], // all app tickets
+  ticketsByProject: [], // tickets for active project
+
 
   inProgressTickets: [
     {

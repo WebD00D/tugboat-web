@@ -8,6 +8,8 @@ import _ from "lodash";
 import { connect } from "react-redux";
 import { CirclePicker } from "react-color";
 
+import moment from "moment";
+
 import "whatwg-fetch";
 
 import "../assets/styles.css";
@@ -175,6 +177,113 @@ class Project extends PureComponent {
     super(props);
 
     this.state = {
+      activeProjectDetails: [],
+      createNewTicket: false,
+      newTicketTitle: "",
+      newTicketDesc: "",
+      notifyAllMembers: true,
+      membersToNotify: "",
+      newProjectETA: "",
+      newProjectStatus: "Backlog",
+
+      tickets_inProgress: 0,
+      tickets_verifying: 0,
+      tickets_done: 0,
+      tickets_inQueue: 0,
+      tickets_planning: 0,
+      tickets_backlog: 0
+    };
+  }
+
+  componentDidMount() {
+    this.setState({
+      activeProjectDetails: this.props.projects[this.props.activeProjectId]
+    });
+
+    fire
+      .database()
+      .ref(`/tickets-by-project/${this.props.activeProjectId}/`)
+      .on(
+        "value",
+        function(snapshot) {
+          console.log("TICKETS", snapshot.val());
+          this.props.setTicketsByProject(snapshot.val());
+        }.bind(this)
+      );
+
+      // pull next ticket number from project endpoint ..
+
+      fire
+      .database()
+      .ref(`/projects/${this.props.user.id}/${this.props.activeProjectId}`)
+      .on(
+        "value",
+        function(snapshot) {
+          console.log("TICKET NUMBER", snapshot.val().TicketNumber);
+          this.props.setNextTicketNumber(snapshot.val().TicketNumber);
+        }.bind(this)
+      );
+
+
+  }
+
+  createNewTicket() {
+    console.log("CREATE NEW TICKET");
+
+    const userId = this.props.user.id;
+    const activeProjectId = this.props.activeProjectId;
+
+    const newPostKey = fire
+      .database()
+      .ref(`tickets-by-project/`)
+      .child(activeProjectId)
+      .push().key;
+
+    const ticketData = {
+      id: newPostKey,
+      ticketNumber: this.props.nextTicketNumber,
+      title: this.state.newTicketTitle,
+      description: this.state.newTicketDesc,
+      membersToNotify: this.state.membersToNotify,
+      notifyAllMembers: this.state.notifyAllMembers,
+      eta: this.state.newProjectETA,
+      status: this.state.newProjectStatus,
+      by: this.props.user.name,
+      lastUpdated: Date.now()
+    };
+
+    var updates = {};
+
+    // update tickets-by-project
+    updates[
+      `/tickets-by-project/${activeProjectId}/${newPostKey}`
+    ] = ticketData;
+
+    // udpate the project lastUpdated , and project next Ticket #
+    updates[
+      `/projects/${this.props.user.id}/${this.props.activeProjectId}/TicketNumber`
+    ] = this.props.nextTicketNumber + 1;
+    updates[
+      `/projects/${this.props.user.id}/${this.props.activeProjectId}/lastUpdated`
+    ] = Date.now();
+
+  // add ticket to users all ticket list
+    updates[
+      `/tickets-by-user/${this.props.user.id}/${newPostKey}`
+    ] = ticketData;
+  
+
+   // .ref(`/projects/${this.props.user.id}/${this.props.activeProjectId}`)
+
+  
+    fire
+      .database()
+      .ref()
+      .update(updates);
+
+    message.success(`Ticket ${this.props.nextTicketNumber} created!`);
+
+    this.setState({
       createNewTicket: false,
       newTicketTitle: "",
       newTicketDesc: "",
@@ -182,25 +291,44 @@ class Project extends PureComponent {
       membersToNotify: "",
       newProjectETA: "",
       newProjectStatus: ""
-    };
+    });
   }
 
-  renderTickets() {
+  renderTickets(status) {
+    if (this.props.ticketsByProject) {
+      console.log(this.props.ticketsByProject);
+      const allTickets = this.props.ticketsByProject;
 
-    if ( this.props.tickets[this.props.activeProjectId]) {
-      const allTickets = this.props.activeProject.tickets;
       let Tickets = Object.keys(allTickets).map(key => {
+
+        // id: newPostKey,
+        // ticketNumber: this.props.nextTicketNumber,
+        // title: this.state.newTicketTitle,
+        // description: this.state.newTicketDesc,
+        // membersToNotify: this.state.membersToNotify,
+        // notifyAllMembers: this.state.notifyAllMembers,
+        // eta: this.state.newProjectETA,
+        // status: this.state.newProjectStatus,
+
+        const lastUpdated = moment(allTickets[key].lastUpdated).format(
+          "MM.DD.YY, h:mm a"
+        );
+
+        if (allTickets[key].status != status) {
+          return;
+        }
+
         return (
           <TicketCard key={key}>
             <TicketNumber style={{ backgroundColor: "#72F2AD" }}>
-              #1001
+              #{allTickets[key].ticketNumber}
             </TicketNumber>
             <TicketCardMeta>
               <Icon
                 type="exclamation-circle-o"
                 style={{ color: "#72F2AD", marginRight: "12px" }}
               />{" "}
-              Opened {allTickets[key].created} by {allTickets[key].by}
+              Opened {lastUpdated} by {allTickets[key].by}
             </TicketCardMeta>
             <TicketTitle>{allTickets[key].title}</TicketTitle>
           </TicketCard>
@@ -219,7 +347,7 @@ class Project extends PureComponent {
             <h2>
               <b>No tickets found.</b>
             </h2>
-           
+
             <Button onClick={() => this.setState({ createNewTicket: true })}>
               Add a ticket
             </Button>
@@ -233,18 +361,61 @@ class Project extends PureComponent {
   }
 
   render() {
+    let inProgressCount = 0;
+    let verifyingCount = 0;
+    let doneCount = 0;
+    let inQueueCount = 0;
+    let planningCount = 0;
+    let backlogCount = 0;
+
+    if (this.props.ticketsByProject) {
+      let inProgress = _.filter(this.props.ticketsByProject, function(item) {
+        return item.status === "In Progress";
+      });
+      inProgressCount = inProgress.length;
+
+      let verifying = _.filter(this.props.ticketsByProject, function(item) {
+        return item.status === "Verifying";
+      });
+      verifyingCount = verifying.length;
+
+      let done = _.filter(this.props.ticketsByProject, function(item) {
+        return item.status === "Done";
+      });
+      doneCount = done.length;
+
+      let inQueue = _.filter(this.props.ticketsByProject, function(item) {
+        return item.status === "In Queue";
+      });
+      inQueueCount = inQueue.length;
+
+      let planning = _.filter(this.props.ticketsByProject, function(item) {
+        return item.status === "Planning";
+      });
+      planningCount = planning.length;
+
+      let backlog = _.filter(this.props.ticketsByProject, function(item) {
+        return item.status === "Backlog";
+      });
+      backlogCount = backlog.length;
+    }
+
     return (
       <LolipopAdmin>
         <Navigation
           hasProjectDetails={true}
           handleNewProject={() => this.setState({ createNewProject: true })}
         />
-
         <UI.PageContainerSmall>
-        
           <UI.Box>
-            <Link style={{float: "right"}} to="/projects"><Icon type="arrow-left" /> Back to projects</Link>
-            <h1>Workpath</h1>
+            <Link style={{ float: "right" }} to="/projects">
+              <Icon type="arrow-left" /> Back to projects
+            </Link>
+            <h1>
+              {this.state.activeProjectDetails
+                ? this.state.activeProjectDetails.title
+                : "No project set"}{" "}
+            </h1>
             <div
               style={{
                 display: "flex",
@@ -287,29 +458,32 @@ class Project extends PureComponent {
             </div>
 
             <Tabs style={{ marginTop: "60px" }} defaultActiveKey="1">
-              <TabPane tab="In Progress (12)" key="1">
-                {this.renderTickets()}
+              <TabPane tab={`In Progress (${inProgressCount})`} key="1">
+                {this.renderTickets("In Progress")}
               </TabPane>
-              <TabPane tab="Verifying (4)" key="2">
-                {this.renderTickets()}
+              <TabPane tab={`Verifying (${verifyingCount})`} key="2">
+                {this.renderTickets("Verifying")}
               </TabPane>
-              <TabPane tab="In Queue (2)" key="3">
-                {this.renderTickets()}
+              <TabPane tab={`Done (${doneCount})`} key="3">
+                {this.renderTickets("Done")}
               </TabPane>
-              <TabPane tab="Backlog (34)" key="4">
-                {this.renderTickets()}
+              <TabPane tab={`In Queue (${inQueueCount})`} key="4">
+                {this.renderTickets("In Queue")}
               </TabPane>
-              <TabPane tab=" Done (23)" key="5">
-                {this.renderTickets()}
+              <TabPane tab={`Planning (${planningCount})`} key="5">
+                {this.renderTickets("Planning")}
+              </TabPane>
+              <TabPane tab={`Backlog (${backlogCount})`} key="6">
+                {this.renderTickets("Backlog")}
               </TabPane>
             </Tabs>
           </UI.Box>
         </UI.PageContainerSmall>
 
         <Modal
-          title="New Ticket #139"
+          title={`New Ticket #${this.props.nextTicketNumber}`}
           visible={this.state.createNewTicket}
-          onOk={() => alert("okay add a ticket")}
+          onOk={() => this.createNewTicket()}
           onCancel={() => this.setState({ createNewTicket: false })}
           okText="Create project"
         >
@@ -397,19 +571,20 @@ class Project extends PureComponent {
 
           <UI.FormField>
             <label>Members to Notify</label>
-            
+
             <Select
               disabled={this.state.notifyAllMembers}
               mode="multiple"
               labelInValue
               placeholder="Select users"
               filterOption={false}
-              onChange={val => console.log("hello")}
+              onChange={val => this.setState({ membersToNotify: val })}
               style={{ width: "100%", marginTop: "4px" }}
             >
-              <Option key={"rva.christian91@gmail.com"}>rva.christian91@gmail.com</Option>
+              <Option key={"rva.christian91@gmail.com"}>
+                rva.christian91@gmail.com
+              </Option>
               <Option key={"jcrm@comcast.net"}>jcrm@comcast.net</Option>
-
             </Select>
           </UI.FormField>
         </Modal>
@@ -418,17 +593,41 @@ class Project extends PureComponent {
   }
 }
 
-const mapStateToProps = ({ user, projects, newIssue, activeProject, hasProjectDetails, activeProjectId, tickets }) => {
-  return { user, projects, newIssue, activeProject, hasProjectDetails, activeProjectId, tickets };
+const mapStateToProps = ({
+  user,
+  projects,
+  newIssue,
+  activeProject,
+  hasProjectDetails,
+  activeProjectId,
+  tickets,
+  ticketsByProject,
+  nextTicketNumber
+}) => {
+  return {
+    user,
+    projects,
+    newIssue,
+    activeProject,
+    hasProjectDetails,
+    activeProjectId,
+    tickets,
+    ticketsByProject,
+    nextTicketNumber
+  };
 };
 
 const mapDispatchToProps = dispatch => {
   return {
-    createCourier: (user, courier) =>
+    setTicketsByProject: tickets =>
       dispatch({
-        type: `CREATE_COURIER`,
-        user,
-        courier
+        type: `SET_TICKETS_BY_PROJECT`,
+        tickets
+      }),
+      setNextTicketNumber: number => 
+      dispatch({
+        type: `SET_NEXT_TICKET_NUMBER`,
+        number
       })
   };
 };

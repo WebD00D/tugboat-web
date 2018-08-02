@@ -160,7 +160,7 @@ class Dashboard extends PureComponent {
 
       let Projects = Object.keys(AllProjects).map(key => {
         const lastUpdated = moment(AllProjects[key].lastUpdated).format(
-          "MM.DD.YY, h:mm:ss a"
+          "MM.DD.YY, h:mm a"
         ); // August 1st 2018, 8:43:23 pm
 
         return (
@@ -375,6 +375,7 @@ class Dashboard extends PureComponent {
       title: this.state.newProjectTitle,
       color: this.state.newProjectColor,
       visibility: this.state.newProjectVisibility,
+      nextTicketNumber: 1000,
       lastUpdated: Date.now()
     };
 
@@ -410,7 +411,7 @@ class Dashboard extends PureComponent {
   }
 
   render() {
-    
+
     if (this.state.ticketId) {
       return <Redirect to={`/project?pid=${this.state.ticketId}`} />;
     }
