@@ -4,84 +4,93 @@ import _ from "lodash";
 
 const reducer = (state, action) => {
 
-  if (action.type === `CREATE_COURIER`) {
+  if ( action.type === `SET_PROJECTS` ) {
     return Object.assign({}, state, {
-      user: action.user,
-      courier: action.courier
-    });
-  }
-
-  if ( action.type === `ADD_ZONE` ) {
-    
-    return Object.assign({}, state, {
-      zones: [...state.zones, action.zone]
+      projects: action.projects 
     })
   }
 
-  if ( action.type === `SET_ZONES` ) {
+  if ( action.type === `SET_ACTIVE_PROJECT` ) {
     return Object.assign({}, state, {
-      zones: action.zones 
+      activeProjectId: action.id 
     })
   }
+
+
 
   return state;
 };
 
 const initialState = {
-  userTypes: [`COURIER`, `MERCHANT`, `SHOPPER`],
-
-  // user: {},
-  // courier: {},
-
+  userTypes: [`ADMIN`, `NON-ADMIN`],
   user: {
     authenticated: true,
-    id: 'ok8Z3Emd8PMvRodsGPiaubIpHTK2',
-    type: `COURIER`,
+    id: 'bhI3RoqFdWZ6P0pGkzc4mCnjoRN2',
+    type: `ADMIN`,
     email: "rva.christian91@gmail.com",
     name: "Christian Bryant"
   },
 
-  courier: {
-    id: 'ok8Z3Emd8PMvRodsGPiaubIpHTK2',
-    company: "Quickness RVA",
-    contactName: "Christian Bryant",
-    contactEmail: "rva.christian91@gmail.com",
-    contactPhone: "804.555.5555",
-    city: "Richmond",
-    state: "VA",
-    zip: "23233",
-    authenticationEmail: "rva.christian91@gmail.com"
-  },
+  projects: [],
+  activeProjectId: 'ggtrrfwefkkfkr4',
+  nextTicketNumber: 1000,
 
+  tickets: [ ],
 
-  zones: [],
-  merchants: [],
-  twinjetAPI: null
+  inProgressTickets: [
+    {
+      ticketNumber: "3739",
+      project: "Workpath",
+      title: "Bug fix for lorem ipsum",
+      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+      startDate: new Date('2018', '07', '01'),
+      endDate: new Date('2018', '07', '04'),
+      backgroundColor: '#E09B80',
+      status: "In Progress",
+      estimate: "3"
+    },
+    {
+      ticketNumber: "3737",
+      project: "Maya",
+      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+      title: "Lorem ipsum dolar set",
+      startDate: new Date('2018', '07', '01'),
+      endDate: new Date('2018', '07', '02'),
+      backgroundColor: '#1890ff',
+      status: "In Progress",
+      estimate: "2"
+    },
+    {
+      ticketNumber: "3740",
+      project: "Maya",
+      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+      title: "Question to answer for a feature",
+      startDate: new Date('2018', '07', '02'),
+      endDate: new Date('2018', '07', '04'),
+      backgroundColor: '#1890ff',
+      status: "Verifying",
+      estimate: "1"
+    },
+    {
+      ticketNumber: "3902",
+      project: "Maya",
+      title: "Unable to login on Safari",
+      description: "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+      startDate: new Date('2018', '07', '06'),
+      endDate: new Date('2018', '07', '09'),
+      backgroundColor: '#1890ff',
+      status: "Verifying",
+      estimate: "3"
+    },
+  ]
+
 };
 
 const createStore = () =>
   reduxCreateStore(
     reducer,
-    initialState
-   // window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+    initialState,
+    window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
   );
 export default createStore;
 
-// const user = {
-//   authenticated: true,
-//   id: courierId,
-//   type: `COURIER`,
-//   email: this.state.loginEmail,
-//   name: this.state.contactPerson
-// };
-
-// const courier = {
-//   id: courierId,
-//   contactName: this.state.contactPerson,
-//   contactEmail: this.state.email,
-//   contactPhone: this.state.phone,
-//   city: this.state.city,
-//   state: this.state.usState,
-//   zip: this.state.zip,
-//   authenticationEmail: this.state.loginEmail
-// };

@@ -1,11 +1,3 @@
-# COG Marketplace
+# Tugboat
 
-### Getting Setup
-
-- Clone the repo
-- Run `yarn install`
-- Run `yarn develop`
-
-### Prettier
-Keep your code formatted nicely. After you've written a good chunk or so, in the file
-hit `Ctrl + Option + F`. You can do this in JS, and CSS files. Keeps it reeeeal nice. 
+Life shouldn’t be all about work. We think folks should spend more time outside, not behind the screen. Our product helps with this. Designed to help you buy back lost hours spent working to do, well, whatever it is you love to do. Tugboat is a ticket tracking, and time management software for freelancers that keeps them and their clients happy. 

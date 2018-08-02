@@ -7,13 +7,8 @@ import _ from "lodash";
 import { connect } from "react-redux";
 import "whatwg-fetch";
 
-import "../layouts/fcss.css";
-import "../layouts/components.css";
-import "../layouts/admin.css";
+import "../assets/styles.css";
 
-import "../layouts/lolipop.css";
-
-import TicketPreview from "../components/TicketPreview";
 
 import { Avatar, Badge, Dropdown, Menu, Button, Icon } from "antd";
 
@@ -21,18 +16,10 @@ class AdminTheme extends PureComponent {
   constructor(props) {
     super(props);
   }
-
   render() {
-
-   // console.log(location.pathname)
+    // May decide to do some theme file here, so created a theme wrapper just in case.. 
     return (
-      <div>
-        <div className="lolipop-nav">
-          <div>1</div>
-          <div>2</div>
-        </div>
         <div className="theme-child-wrap">{this.props.children}</div>
-      </div>
     );
   }
 }

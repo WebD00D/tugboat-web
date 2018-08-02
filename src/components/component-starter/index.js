@@ -1,14 +1,12 @@
 import React, { PureComponent } from "react";
 import { Route, Redirect, Link } from "react-router-dom";
-import fire from "../fire";
+import fire from "../../fire";
 
-
-import "../assets/styles.css";
-
+import "./index.css";
 
 import { connect } from "react-redux";
 
-class IndexPage extends PureComponent {
+class ComponentStarter extends PureComponent {
   constructor(props) {
     super(props);
 
@@ -18,8 +16,7 @@ class IndexPage extends PureComponent {
   render() {
     return (
       <div className="page-container">
-         <h1><b>Caboose</b></h1>
-        Up your freelance game: foster a healthy client relationship by making them feel included at every step of the project. Give them a ticket aboard your [New Co] project train and they will thank you.
+        
       </div>
     );
   }
@@ -42,4 +39,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(IndexPage);
+export default connect(mapStateToProps, mapDispatchToProps)(ComponentStarter);

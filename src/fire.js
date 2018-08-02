@@ -1,11 +1,11 @@
-import firebase from 'firebase'
+import firebase from "firebase";
 var config = {
-  apiKey: "AIzaSyDbLtCnQ9DD8fgT_8WDFhIrzEL7yJdYnm0",
-  authDomain: "cogmerchant.firebaseapp.com",
-  databaseURL: "https://cogmerchant.firebaseio.com",
-  projectId: "cogmerchant",
+  apiKey: "AIzaSyC0Yn77TYXhk5MskwjaVPtC08izjyAA9sU",
+  authDomain: "tugboat-app.firebaseapp.com",
+  databaseURL: "https://tugboat-app.firebaseio.com",
+  projectId: "tugboat-app",
   storageBucket: "",
-  messagingSenderId: "456183308424"
-  };
+  messagingSenderId: "888761548553"
+};
 var fire = firebase.initializeApp(config);
 export default fire;
