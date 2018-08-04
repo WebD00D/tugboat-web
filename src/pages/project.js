@@ -27,6 +27,7 @@ import {
   Icon,
   Tooltip,
   Tabs,
+  Tag,
   List,
   Mention,
   Divider
@@ -523,7 +524,7 @@ class Project extends PureComponent {
                 type={icon}
                 style={{ color: ticketNumberBG, marginRight: "12px" }}
               />{" "}
-              Opened {lastUpdated} by {allTickets[key].by}
+              Last updated {lastUpdated} by {allTickets[key].by}
             </TicketCardMeta>
             <TicketTitle>{allTickets[key].title}</TicketTitle>
           </TicketCard>
@@ -557,9 +558,12 @@ class Project extends PureComponent {
 
   renderTickets(status) {
     if (this.props.ticketsByProject) {
+
       const allTickets = this.props.ticketsByProject;
 
       let Tickets = Object.keys(allTickets).map(key => {
+
+        
         const lastUpdated = moment(allTickets[key].lastUpdated).format(
           "MM.DD.YY, h:mm a"
         );
@@ -617,7 +621,7 @@ class Project extends PureComponent {
                 type={icon}
                 style={{ color: ticketNumberBG, marginRight: "12px" }}
               />{" "}
-              Opened {lastUpdated} by {allTickets[key].by}
+              Last updated {lastUpdated} by {allTickets[key].by}
             </TicketCardMeta>
             <TicketTitle>{allTickets[key].title}</TicketTitle>
           </TicketCard>
@@ -722,7 +726,7 @@ class Project extends PureComponent {
             <Link style={{ float: "right" }} to="/projects">
               <Icon type="arrow-left" /> Back to Dashboard
             </Link>
-            <h1>
+            <h1 style={{fontWeight: 700, fontSize: "40px"}}>
               {this.state.activeProjectDetails
                 ? this.state.activeProjectDetails.title
                 : "No project set"}{" "}
@@ -741,8 +745,10 @@ class Project extends PureComponent {
                 }}
               >
                 <div>
-                  <Icon type="clock-circle-o" /> last update:{" "}
-                  {projectLastUpdated}
+                <Tag style={{ marginLeft: "8px" }} color="geekblue">
+                    <Icon type="clock-circle-o" /> last update:{" "}
+                    {projectLastUpdated}
+                  </Tag>
                 </div>
               </div>
               <div>
@@ -1002,7 +1008,7 @@ class Project extends PureComponent {
 
             <div className="share-box">
               <Icon type="global" />{" "}
-              {`https://www.tugboat-app.com/collaborate?u=${
+              {`http://localhost:8000/collaborate?u=${
                 this.props.user.id
               }&p=${this.props.activeProjectId}`}
             </div>

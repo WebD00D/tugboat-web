@@ -39,6 +39,12 @@ const reducer = (state, action) => {
     });
   }
 
+  if (action.type === `SET_COLLABORATOR_PROJECT`) {
+    return Object.assign({}, state, {
+      projects: action.project
+    });
+  }
+
 
   return state;
 };

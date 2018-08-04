@@ -14,7 +14,8 @@ import {
   Dropdown,
   Divider,
   Breadcrumb,
-  Tabs
+  Tabs,
+  Tag,
 } from "antd";
 
 import { connect } from "react-redux";
@@ -84,7 +85,14 @@ class Navigation extends PureComponent {
           <b>tugboat</b>
         </h1>
 
-        <div className="nav-buttons">
+        { this.props.collab ?
+          <div>
+            <div style={{textAlign: "right"}}><small>Collaborating as:</small></div>
+
+           <Tag style={{marginRight: "0px"}} color="#108ee9">{this.props.collaborator}</Tag></div>
+
+          
+          :  <div className="nav-buttons">
           
           <Dropdown overlay={notificationMenu}>
             <span style={{ marginRight: "12px" }}>
@@ -98,7 +106,9 @@ class Navigation extends PureComponent {
               <Avatar shape="circle">CB</Avatar>
             </span>
           </Dropdown>
-        </div>
+        </div> }
+       
+        
 
         <Icon
           onClick={() => {
@@ -150,10 +160,13 @@ class Navigation extends PureComponent {
                 <b>tugboat</b>
               </h1>
             </div>
+
           </div>
         ) : (
           ""
         )}
+
+
       </div>
     );
   }

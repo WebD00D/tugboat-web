@@ -8,6 +8,8 @@ import _ from "lodash";
 import { connect } from "react-redux";
 import { CirclePicker } from "react-color";
 
+import { getQueryVariable } from "../utils/app-utils";
+
 import moment from "moment";
 
 import "whatwg-fetch";
@@ -27,9 +29,11 @@ import {
   Icon,
   Tooltip,
   Tabs,
+  Tag,
   List,
   Mention,
-  Divider
+  Divider,
+  Alert
 } from "antd";
 
 const { Option, OptGroup } = Select;
@@ -179,14 +183,14 @@ class Collaborate extends PureComponent {
     super(props);
 
     this.state = {
+      collaborator: "rva.christian91@gmail.com",
+
       activeProjectDetails: [],
       createNewTicket: false,
       newTicketTitle: "",
       newTicketDesc: "",
-      notifyAllMembers: true,
-      membersToNotify: "",
       newProjectETA: "1",
-      newProjectStatus: "Backlog",
+      newProjectStatus: "Queue",
 
       edit_id: "",
       edit_ticketNumber: "",
@@ -203,22 +207,22 @@ class Collaborate extends PureComponent {
       tickets_done: 0,
       tickets_inQueue: 0,
       tickets_planning: 0,
-      tickets_backlog: 0,
-
-      showCollaboratorModal: false,
-      whitelabeledEmail: "",
-      sendInvite: true
+      tickets_backlog: 0
     };
   }
 
   componentDidMount() {
+    const u = getQueryVariable("u");
+    const p = getQueryVariable("p");
+
     this.setState({
-      activeProjectDetails: this.props.projects[this.props.activeProjectId]
+      creatorId: u,
+      projectId: p
     });
 
     fire
       .database()
-      .ref(`/tickets-by-project/${this.props.activeProjectId}/`)
+      .ref(`/tickets-by-project/${p}/`)
       .on(
         "value",
         function(snapshot) {
@@ -226,75 +230,23 @@ class Collaborate extends PureComponent {
         }.bind(this)
       );
 
-    // pull next ticket number from project endpoint ..
-
     fire
       .database()
-      .ref(`/projects/${this.props.user.id}/${this.props.activeProjectId}`)
+      .ref(`/projects/${u}/${p}`)
       .on(
         "value",
         function(snapshot) {
+          console.log("active projectr snapshot??", snapshot.val());
+          this.props.setActiveProject(p);
+          this.props.setCollaboratorProject(snapshot.val());
           this.props.setNextTicketNumber(snapshot.val().TicketNumber);
         }.bind(this)
       );
   }
 
-  addCollaborators() {
-    const email = this.state.whitelabeledEmail;
-    const sendInvite = this.state.sendInvite;
-
-    const collaboratorKey = fire
-      .database()
-      .ref(`/projects/${this.props.user.id}/${this.props.activeProjectId}/`)
-      .child("collaborators")
-      .push().key;
-
-    let updates = {};
-
-    const collaboratorData = {
-      id: collaboratorKey,
-      email: email
-    };
-    updates[
-      `/projects/${this.props.user.id}/${
-        this.props.activeProjectId
-      }/collaborators/${collaboratorKey}`
-    ] = collaboratorData;
-
-    fire
-      .database()
-      .ref()
-      .update(updates);
-
-    this.setState({
-      whitelabeledEmail: "",
-    });
-
-    message.success(`${email} added as a collaborator!`);
-  }
-
-  removeCollaborator(id) {
-
-    let updates = {};
-
-    updates[`/projects/${this.props.user.id}/${this.props.activeProjectId}/collaborators/${id}`] = null;
-    fire
-      .database()
-      .ref()
-      .update(updates);
-
-    message.error(`removed collaborator`);
-
-
-    this.setState({
-      whitelabeledEmail: "",
-    });
-
-  }
-
   createNewTicket() {
-    const userId = this.props.user.id;
-    const activeProjectId = this.props.activeProjectId;
+    const userId = this.state.creatorId;
+    const activeProjectId = this.state.projectId;
 
     let updates = {};
 
@@ -309,32 +261,11 @@ class Collaborate extends PureComponent {
       ticketNumber: this.props.nextTicketNumber,
       title: this.state.newTicketTitle,
       description: this.state.newTicketDesc,
-
-      eta: this.state.newProjectETA,
-      status: this.state.newProjectStatus,
-      by: this.props.user.name,
+      eta: "",
+      status: "Queue",
+      by: this.state.collaborator,
       lastUpdated: Date.now()
     };
-
-    if (this.state.newProjectStatus === "In Progress") {
-      let Today = moment(Date.now());
-      let Tomorrow = moment(Today).add(Number(this.state.eta), "days");
-      let TodayUnix = moment(Today).format("x");
-      let TomorrowUnix = moment(Tomorrow).format("x");
-
-      ticketData.startDate = Number(TodayUnix);
-      ticketData.endDate = Number(TomorrowUnix);
-      ticketData.projectColor = this.props.projects[
-        this.props.activeProjectId
-      ].color;
-      ticketData.project = this.props.projects[
-        this.props.activeProjectId
-      ].title;
-
-      updates[
-        `/in-progress-calendar/${this.props.user.id}/${newPostKey}/`
-      ] = ticketData;
-    }
 
     // update tickets-by-project
     updates[
@@ -342,24 +273,13 @@ class Collaborate extends PureComponent {
     ] = ticketData;
 
     // udpate the project lastUpdated , and project next Ticket #
-    updates[
-      `/projects/${this.props.user.id}/${
-        this.props.activeProjectId
-      }/TicketNumber`
-    ] =
+    updates[`/projects/${userId}/${activeProjectId}/TicketNumber`] =
       this.props.nextTicketNumber + 1;
-    updates[
-      `/projects/${this.props.user.id}/${
-        this.props.activeProjectId
-      }/lastUpdated`
-    ] = Date.now();
+
+    updates[`/projects/${userId}/${activeProjectId}/lastUpdated`] = Date.now();
 
     // add ticket to users all ticket list
-    updates[
-      `/tickets-by-user/${this.props.user.id}/${newPostKey}`
-    ] = ticketData;
-
-    // .ref(`/projects/${this.props.user.id}/${this.props.activeProjectId}`)
+    updates[`/tickets-by-user/${userId}/${newPostKey}`] = ticketData;
 
     fire
       .database()
@@ -372,10 +292,8 @@ class Collaborate extends PureComponent {
       createNewTicket: false,
       newTicketTitle: "",
       newTicketDesc: "",
-      notifyAllMembers: true,
-      membersToNotify: "",
       newProjectETA: "",
-      newProjectStatus: ""
+      newProjectStatus: "Queue"
     });
   }
 
@@ -401,36 +319,11 @@ class Collaborate extends PureComponent {
       description: this.state.edit_description,
       eta: this.state.edit_eta,
       status: this.state.edit_status,
-      by: this.props.user.name,
+      by: this.state.collaborator,
       lastUpdated: Date.now()
     };
 
     var updates = {};
-
-    if (this.state.edit_status === "In Progress") {
-      let Today = moment(Date.now());
-      let Tomorrow = moment(Today).add(Number(this.state.edit_eta), "days");
-      let TodayUnix = moment(Today).format("x");
-      let TomorrowUnix = moment(Tomorrow).format("x");
-
-      ticketData.startDate = Number(TodayUnix);
-      ticketData.endDate = Number(TomorrowUnix);
-      ticketData.projectColor = this.props.projects[
-        this.props.activeProjectId
-      ].color;
-      ticketData.project = this.props.projects[
-        this.props.activeProjectId
-      ].title;
-
-      updates[
-        `/in-progress-calendar/${this.props.user.id}/${this.state.edit_id}/`
-      ] = ticketData;
-    } else {
-      // Remove from In-Progress..
-      updates[
-        `/in-progress-calendar/${this.props.user.id}/${this.state.edit_id}/`
-      ] = null;
-    }
 
     // update tickets-by-project
     updates[
@@ -438,16 +331,15 @@ class Collaborate extends PureComponent {
     ] = ticketData;
 
     updates[
-      `/projects/${this.props.user.id}/${
-        this.props.activeProjectId
-      }/lastUpdated`
+      `/projects/${this.state.creatorId}/${activeProjectId}/lastUpdated`
     ] = Date.now();
 
-    // edit ticket on users all ticket list
+    // add ticket to users all ticket list
     updates[
-      `/tickets-by-user/${this.props.user.id}/${this.state.edit_id}`
+      `/tickets-by-user/${this.state.creatorId}/${this.state.edit_id}`
     ] = ticketData;
 
+ 
     fire
       .database()
       .ref()
@@ -460,8 +352,7 @@ class Collaborate extends PureComponent {
       edit_ticketNumber: "",
       edit_title: "",
       edit_description: "",
-      edit_eta: "",
-      edit_status: "",
+      
       show_edit_modal: false
     });
   }
@@ -523,7 +414,7 @@ class Collaborate extends PureComponent {
                 type={icon}
                 style={{ color: ticketNumberBG, marginRight: "12px" }}
               />{" "}
-              Opened {lastUpdated} by {allTickets[key].by}
+              Last edited {lastUpdated} by {allTickets[key].by}
             </TicketCardMeta>
             <TicketTitle>{allTickets[key].title}</TicketTitle>
           </TicketCard>
@@ -617,7 +508,7 @@ class Collaborate extends PureComponent {
                 type={icon}
                 style={{ color: ticketNumberBG, marginRight: "12px" }}
               />{" "}
-              Opened {lastUpdated} by {allTickets[key].by}
+              Last updated {lastUpdated} by {allTickets[key].by}
             </TicketCardMeta>
             <TicketTitle>{allTickets[key].title}</TicketTitle>
           </TicketCard>
@@ -689,43 +580,25 @@ class Collaborate extends PureComponent {
       backlogCount = backlog.length;
     }
 
-    const projectLastUpdated = moment(
-      this.props.projects[this.props.activeProjectId].lastUpdated
-    ).format("MM.DD.YY, h:mm a");
-
-    const collaborators =
-      this.props.projects[this.props.activeProjectId].collaborators &&
-      Object.keys(
-        this.props.projects[this.props.activeProjectId].collaborators
-      ).map(key => {
-
-          let collaborator =  this.props.projects[this.props.activeProjectId].collaborators[key];
-          console.log(collaborator)
-
-          return (
-            <List.Item key={key}>
-                {collaborator.email}
-                <Button onClick={()=> this.removeCollaborator(collaborator.id)} type="danger"><Icon type="close-circle-o" /> Remove</Button>
-            </List.Item>
-          )
-
-      });
+    const projectLastUpdated = moment(this.props.projects.lastUpdated).format(
+      "MM.DD.YY @h:mm a"
+    );
 
     return (
       <LolipopAdmin>
         <Navigation
+          collab={true}
+          collaborator={this.state.collaborator}
           hasProjectDetails={true}
           handleNewProject={() => this.setState({ createNewProject: true })}
         />
+
         <UI.PageContainerSmall>
           <UI.Box>
-            <Link style={{ float: "right" }} to="/projects">
-              <Icon type="arrow-left" /> Back to Dashboard
-            </Link>
-            <h1>
-              {this.state.activeProjectDetails
-                ? this.state.activeProjectDetails.title
-                : "No project set"}{" "}
+          
+
+            <h1 style={{fontWeight: 700, fontSize: "40px" }}>
+              {this.props.projects.title}
             </h1>
             <div
               style={{
@@ -741,27 +614,18 @@ class Collaborate extends PureComponent {
                 }}
               >
                 <div>
-                  <Icon type="clock-circle-o" /> last update:{" "}
-                  {projectLastUpdated}
+                  <Tag style={{ marginLeft: "8px" }} color="geekblue">
+                    <Icon type="clock-circle-o" /> last update:{" "}
+                    {projectLastUpdated}
+                  </Tag>
                 </div>
               </div>
               <div>
                 <Button
-                  style={{ marginRight: "12px" }}
                   type="primary"
                   onClick={() => this.setState({ createNewTicket: true })}
                 >
                   New Ticket
-                </Button>
-                <Button
-                  onClick={() => this.setState({ showCollaboratorModal: true })}
-                  style={{ marginRight: "12px" }}
-                >
-                  <Icon type="share-alt" /> Sharing
-                </Button>
-
-                <Button type="danger">
-                  <Icon type="delete" />
                 </Button>
               </div>
             </div>
@@ -827,53 +691,9 @@ class Collaborate extends PureComponent {
             />
           </UI.FormField>
 
-          <UI.FormField>
-            <div>
-              <label>Time Estimate (days)</label>
-            </div>
-            <Select
-              style={{ width: "150px", marginTop: "4px" }}
-              defaultValue="1"
-              onChange={val => {
-                this.setState({ newProjectETA: val });
-              }}
-            >
-              <Option value="1">1 day</Option>
-              <Option value="2">2 days</Option>
-              <Option value="3">3 days</Option>
-              <Option value="4">4 days</Option>
-              <Option value="5">5 days</Option>
-              <Option value="6">6 days</Option>
-              <Option value="7">7 days</Option>
-              <Option value="8">8 days</Option>
-              <Option value="9">9 days</Option>
-              <Option value="10">10 days</Option>
-              <Option value="11">11 days</Option>
-              <Option value="12">12 days</Option>
-              <Option value="13">13 days</Option>
-              <Option value="14">14 days</Option>
-            </Select>
-          </UI.FormField>
+          
 
-          <UI.FormField>
-            <div>
-              <label>Status</label>
-            </div>
-            <Select
-              style={{ width: "150px", marginTop: "4px" }}
-              defaultValue="Backlog"
-              onChange={val => {
-                this.setState({ newProjectStatus: val });
-              }}
-            >
-              <Option value="Backlog">Backlog</Option>
-              <Option value="Planning">Planning</Option>
-              <Option value="Queue">In Queue</Option>
-              <Option value="In Progress">In Progress</Option>
-              <Option value="Verifying">Verifying</Option>
-              <Option value="Done">Done</Option>
-            </Select>
-          </UI.FormField>
+         
         </Modal>
 
         {/* EDIT TICKET MODAL */}
@@ -884,10 +704,12 @@ class Collaborate extends PureComponent {
           onOk={() => this.editTicket()}
           onCancel={() => this.setState({ show_edit_modal: false })}
           okText="Save ticket"
+          
         >
           <UI.FormField>
             <label>Ticket Title</label>
             <Input
+           
               value={this.state.edit_title}
               onChange={e => {
                 this.setState({ edit_title: e.target.value });
@@ -899,7 +721,7 @@ class Collaborate extends PureComponent {
           <UI.FormField>
             <label>Description</label>
             <TextArea
-              style={{ marginTop: "4px" }}
+              style={{ marginTop: "4px", height: "150px" }}
               value={this.state.edit_description}
               onChange={e => {
                 this.setState({ edit_description: e.target.value });
@@ -909,111 +731,14 @@ class Collaborate extends PureComponent {
           </UI.FormField>
 
           <UI.FormField>
-            <div>
-              <label>Time Estimate (days) </label>
-            </div>
-
-            <Select
-              style={{ width: "150px", marginTop: "4px" }}
-              value={this.state.edit_eta}
-              onChange={val => {
-                this.setState({ edit_eta: val });
-              }}
-            >
-              <Option value="1">1 day</Option>
-              <Option value="2">2 days</Option>
-              <Option value="3">3 days</Option>
-              <Option value="4">4 days</Option>
-              <Option value="5">5 days</Option>
-              <Option value="6">6 days</Option>
-              <Option value="7">7 days</Option>
-              <Option value="8">8 days</Option>
-              <Option value="9">9 days</Option>
-              <Option value="10">10 days</Option>
-              <Option value="11">11 days</Option>
-              <Option value="12">12 days</Option>
-              <Option value="13">13 days</Option>
-              <Option value="14">14 days</Option>
-            </Select>
-          </UI.FormField>
-
-          <UI.FormField>
-            <div>
-              <label>Status</label>
-            </div>
-            <Select
-              style={{ width: "150px", marginTop: "4px" }}
-              value={this.state.edit_status}
-              onChange={val => {
-                this.setState({ edit_status: val });
-              }}
-            >
-              <Option value="Backlog">Backlog</Option>
-              <Option value="Planning">Planning</Option>
-              <Option value="Queue">In Queue</Option>
-              <Option value="In Progress">In Progress</Option>
-              <Option value="Verifying">Verifying</Option>
-              <Option value="Done">Done</Option>
-            </Select>
-          </UI.FormField>
-        </Modal>
-
-        <Modal
-          title={`Sharing`}
-          visible={this.state.showCollaboratorModal}
-          onCancel={() => this.setState({ showCollaboratorModal: false })}
-          footer={null}
-        >
-        
-          <UI.FormField>
-            <label>Collaborator email</label>
+            <label>Time Estimate</label>
             <Input
-              value={this.state.whitelabeledEmail}
-              onChange={e => {
-                this.setState({ whitelabeledEmail: e.target.value });
-              }}
-              placeholder="Enter an email address"
+             disabled
+              value={`${this.state.edit_eta} days`}
             />
           </UI.FormField>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between"
-            }}
-          >
-            <UI.FormField>
-              <Checkbox
-                checked={this.state.sendInvite}
-                onChange={e => this.setState({ sendInvite: e.target.checked })}
-              >
-                Send invite
-              </Checkbox>
-            </UI.FormField>
-            <Button onClick={() => this.addCollaborators()} >
-              Add Collaborator
-            </Button>
-          </div>
 
-          <Divider />
 
-          <UI.FormField>
-          <label>Share URL</label>
-
-            <div className="share-box">
-              <Icon type="global" />{" "}
-              {`https://www.tugboat-app.com/collaborate?u=${
-                this.props.user.id
-              }&p=${this.props.activeProjectId}`}
-            </div>
-          </UI.FormField>
-
-          <List
-            header={<b>Collaborators</b>}
-            bordered>
-             
-              {collaborators}
-            </List>
         </Modal>
       </LolipopAdmin>
     );
@@ -1046,6 +771,11 @@ const mapStateToProps = ({
 
 const mapDispatchToProps = dispatch => {
   return {
+    setCollaboratorProject: project =>
+      dispatch({
+        type: `SET_COLLABORATOR_PROJECT`,
+        project
+      }),
     setTicketsByProject: tickets =>
       dispatch({
         type: `SET_TICKETS_BY_PROJECT`,
@@ -1055,6 +785,11 @@ const mapDispatchToProps = dispatch => {
       dispatch({
         type: `SET_NEXT_TICKET_NUMBER`,
         number
+      }),
+      setActiveProject: id =>
+      dispatch({
+          type: `SET_ACTIVE_PROJECT`,
+          id
       })
   };
 };
