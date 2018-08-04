@@ -174,7 +174,7 @@ const AllTicketActionButtons = styled.div`
   }
 `;
 
-class Project extends PureComponent {
+class Collaborate extends PureComponent {
   constructor(props) {
     super(props);
 
@@ -1059,4 +1059,4 @@ const mapDispatchToProps = dispatch => {
   };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(Project);
+export default connect(mapStateToProps, mapDispatchToProps)(Collaborate);

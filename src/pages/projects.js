@@ -64,10 +64,10 @@ const ProjectCard = styled.div`
   transition: 0.2s ease;
   border: 1px solid #ddd;
   position: relative;
+  cursor: pointer;
 
   h3 {
     margin-bottom: 0px;
-    cursor: pointer;
   }
 
   label {
@@ -137,6 +137,16 @@ class Dashboard extends PureComponent {
       newProjectColor: "",
       ticketId: "",
 
+      newNote: "",
+
+      quickTicketId: "",
+      newTicketTitle: "",
+      newTicketDesc: "",
+      notifyAllMembers: true,
+      membersToNotify: "",
+      newProjectETA: "",
+      newProjectStatus: "Backlog",
+
       calendar_ShowDetails: false,
       calendar_TicketNumber: "",
       calendar_Project: "",
@@ -164,20 +174,25 @@ class Dashboard extends PureComponent {
         ); // August 1st 2018, 8:43:23 pm
 
         return (
-          <ProjectCard key={key}>
-            <h3
-              onClick={() => {
-                this.handleProjectSelection(AllProjects[key].id);
-              }}
-              style={{ color: AllProjects[key].color }}
-            >
+          <ProjectCard
+            onClick={() => {
+              this.handleProjectSelection(AllProjects[key].id);
+            }}
+            key={key}
+          >
+            <h3 style={{ color: AllProjects[key].color }}>
               {AllProjects[key].title}
             </h3>
             <label>Last updated {lastUpdated}</label>
 
-            <div className="project-card-actions">
+            <div className="project-card-actions" style={{ display: "none" }}>
               <Tooltip title="Quickly create a project ticket">
-                <ProjectCardButton type="small">
+                <ProjectCardButton
+                  onClick={() =>
+                    this.setState({ quickTicketId: AllProjects[key].id })
+                  }
+                  type="small"
+                >
                   Add Ticket <Icon type="file-add" />
                 </ProjectCardButton>
               </Tooltip>
@@ -192,6 +207,39 @@ class Dashboard extends PureComponent {
         );
       });
 
+      let Notes =
+        this.props.notes &&
+        Object.keys(this.props.notes).map(key => {
+          const createdOn = moment(this.props.notes[key].createdOn).format(
+            "MM.DD.YY @ h:mm a"
+          ); // August 1st 2018, 8:43:23 pm
+
+          return (
+            <TimelineItem key={key}>
+              <div style={{ color: "#ccc" }}>{createdOn}</div>
+              <p>{this.props.notes[key].note}</p>
+              <a
+                onClick={() =>
+                  this.handleNoteDeletion(this.props.notes[key].id)
+                }
+                href="#"
+              >
+                Delete
+              </a>
+            </TimelineItem>
+          );
+        });
+
+      let inProgressTickets = [];
+
+      this.props.inProgressTickets &&
+        Object.keys(this.props.inProgressTickets).map(key => {
+          let ticket = this.props.inProgressTickets[key];
+         
+
+          inProgressTickets.push(ticket);
+        });
+
       return (
         <Tabs defaultActiveKey="1">
           <TabPane
@@ -202,19 +250,8 @@ class Dashboard extends PureComponent {
             }
             key="1"
           >
-            {!this.props.hasProjectDetails ? (
-              <Button
-                onClick={() => this.setState({ createNewProject: true })}
-                type="primary"
-                style={{ marginBottom: "12px" }}
-              >
-                <Icon type="plus-circle-o" /> New Project
-              </Button>
-            ) : (
-              ""
-            )}
             <div style={{ display: "flex", flexWrap: "wrap" }}>
-              {Projects}
+              {_.reverse(Projects)}
               <ProjectCard
                 style={{
                   backgroundColor: "#f5f5f5",
@@ -240,20 +277,21 @@ class Dashboard extends PureComponent {
             style={{ height: "600px" }}
             tab={
               <span>
-                <Icon type="calendar" />Calendar
+                <Icon type="calendar" />Active Calendar
               </span>
             }
             key="2"
           >
             <BigCalendar
-              events={this.props.inProgressTickets}
+              events={inProgressTickets}
               startAccessor="startDate"
               endAccessor="endDate"
               titleAccessor="title"
               views={["month", "agenda"]}
+              popup={true}
+              selectable={true}
               components={{
                 event: event => {
-                  console.log(event);
                   return (
                     <div
                       onClick={() =>
@@ -264,14 +302,14 @@ class Dashboard extends PureComponent {
                           calendar_Title: event.event.title,
                           calendar_Description: event.event.description,
                           calendar_Status: event.event.status,
-                          calendar_Estimate: event.event.estimate
+                          calendar_Estimate: event.event.eta
                         })
                       }
                       style={{
                         borderRadius: "5px",
                         height: "23px",
                         paddingLeft: "5px",
-                        backgroundColor: event.event.backgroundColor
+                        backgroundColor: event.event.projectColor
                       }}
                     >
                       {`#${event.event.ticketNumber} - ${event.event.project}`}
@@ -290,14 +328,16 @@ class Dashboard extends PureComponent {
                             calendar_Title: event.event.title,
                             calendar_Description: event.event.description,
                             calendar_Status: event.event.status,
-                            calendar_Estimate: event.event.estimate
+                            calendar_Estimate: event.event.eta
                           })
                         }
-                        style={{ color: event.event.backgroundColor }}
                       >
-                        {`#${event.event.ticketNumber} - ${
-                          event.event.project
-                        }`}
+                        <span style={{ color: event.event.projectColor }}>
+                          {` ${event.event.project} - #${
+                            event.event.ticketNumber
+                          }: `}
+                        </span>
+                        {event.event.title}
                       </span>
                     );
                   }
@@ -316,31 +356,23 @@ class Dashboard extends PureComponent {
           >
             <div style={{ maxWidth: "600px" }}>
               <h2>Have something to jot down?</h2>
-              <TextArea />
-              <Button style={{ marginTop: "12px", float: "right" }}>
+              <TextArea
+                value={this.state.newNote || ""}
+                onChange={e => this.setState({ newNote: e.target.value })}
+              />
+              <Button
+                onClick={() => this.createNewNote()}
+                style={{ marginTop: "12px", float: "right" }}
+              >
                 Add Note
               </Button>
 
-              <Timeline style={{ marginTop: "100px" }}>
-                <TimelineItem>
-                  <div style={{ color: "#ccc" }}>August 1, 2018 at 4:32p</div>
-                  <p>
-                    Lorem ipsum dolar set amit consectetur ipsum epicedae dfdf
-                    dfd fdsjrewk reqr aer erek fagenda esheeem.
-                  </p>
-                  <a href="#">Delete</a>
-                </TimelineItem>
-                <TimelineItem>
-                  <div style={{ color: "#ccc" }}>August 1, 2018 at 4:32p</div>
-                  <p>
-                    Lorem ipsum dolar set amit consectetur ipsum epicedae dfdf
-                    dfd fdsjrewk reqr aer erek fagenda esheeem.
-                  </p>
-                  <a href="#">Delete</a>
-                </TimelineItem>
+              <Timeline style={{ marginTop: "60px" }}>
+                {_.reverse(Notes)}
               </Timeline>
             </div>
           </TabPane>
+          
         </Tabs>
       );
     } else {
@@ -375,11 +407,11 @@ class Dashboard extends PureComponent {
       title: this.state.newProjectTitle,
       color: this.state.newProjectColor,
       visibility: this.state.newProjectVisibility,
-      nextTicketNumber: 1000,
+      TicketNumber: 1000,
       lastUpdated: Date.now()
     };
 
-    var updates = {};
+    let updates = {};
     updates[`/projects/${this.props.user.id}/${newPostKey}`] = projectData;
 
     fire
@@ -395,23 +427,82 @@ class Dashboard extends PureComponent {
     });
   }
 
+  handleNoteDeletion(id) {
+    let updates = {};
+    updates[`notes/${this.props.user.id}/${id}`] = null;
+    fire
+      .database()
+      .ref()
+      .update(updates);
+  }
+
+  createNewNote() {
+    const userId = this.props.user.id;
+    const newNoteKey = fire
+      .database()
+      .ref(`notes/`)
+      .child(userId)
+      .push().key;
+
+    const noteData = {
+      id: newNoteKey,
+      note: this.state.newNote,
+      createdOn: Date.now()
+    };
+
+    let updates = {};
+    updates[`notes/${userId}/${newNoteKey}`] = noteData;
+
+    fire
+      .database()
+      .ref()
+      .update(updates);
+
+    message.success(`Note added!`);
+
+    this.setState({
+      newNote: ""
+    });
+  }
+
   componentDidMount() {
+    // GRAB PROJECTS
+
     fire
       .database()
       .ref(`/projects/${this.props.user.id}/`)
       .on(
         "value",
         function(snapshot) {
-          console.log("PROJECTS", snapshot.val());
-
           this.props.setProjects(snapshot.val());
-          // updateStarCount(postElement, snapshot.val());
+        }.bind(this)
+      );
+
+    // GRAB ACTIVE CALENDAR
+
+    fire
+      .database()
+      .ref(`/in-progress-calendar/${this.props.user.id}/`)
+      .on(
+        "value",
+        function(snapshot) {
+          this.props.setActiveCalendar(snapshot.val());
+        }.bind(this)
+      );
+
+    // GRAB NOTES
+    fire
+      .database()
+      .ref(`/notes/${this.props.user.id}/`)
+      .on(
+        "value",
+        function(snapshot) {
+          this.props.setNotes(snapshot.val());
         }.bind(this)
       );
   }
 
   render() {
-
     if (this.state.ticketId) {
       return <Redirect to={`/project?pid=${this.state.ticketId}`} />;
     }
@@ -420,6 +511,20 @@ class Dashboard extends PureComponent {
       <LolipopAdmin>
         <Navigation />
         <UI.PageContainer>
+          <UI.Box>
+            {" "}
+            {!this.props.hasProjectDetails ? (
+              <Button
+                onClick={() => this.setState({ createNewProject: true })}
+                type="primary"
+                style={{ position: "absolute", right: "72px" }}
+              >
+                <Icon type="plus-circle-o" /> New Project
+              </Button>
+            ) : (
+              ""
+            )}
+          </UI.Box>
           <UI.Box>{this.renderProjects()}</UI.Box>
         </UI.PageContainer>
 
@@ -445,7 +550,7 @@ class Dashboard extends PureComponent {
 
           <UI.FormField>
             <label>Time Estimate</label>
-            <p>{this.state.calendar_Estimate}</p>
+            <p>{this.state.calendar_Estimate} days</p>
           </UI.FormField>
 
           <UI.FormField>
@@ -481,35 +586,20 @@ class Dashboard extends PureComponent {
             />
           </UI.FormField>
 
-          <UI.FormField>
-            <label>Visibility</label>
-            <Select
-              defaultValue="private"
-              onChange={val => {
-                this.setState({ newProjectVisibility: val });
-              }}
-              style={{ width: "280px", display: "block" }}
-            >
-              <OptGroup label="Only visible to participating members.">
-                <Option value="private">
-                  <Icon type="lock" /> Private
-                </Option>
-              </OptGroup>
-              <OptGroup label="Visible to anyone with link.">
-                <Option value="public">
-                  <Icon type="global" /> Public
-                </Option>
-              </OptGroup>
-            </Select>
-          </UI.FormField>
         </Modal>
       </LolipopAdmin>
     );
   }
 }
 
-const mapStateToProps = ({ user, projects, inProgressTickets, activeProjectId }) => {
-  return { user, projects, inProgressTickets, activeProjectId };
+const mapStateToProps = ({
+  user,
+  projects,
+  inProgressTickets,
+  activeProjectId,
+  notes
+}) => {
+  return { user, projects, inProgressTickets, activeProjectId, notes };
 };
 
 const mapDispatchToProps = dispatch => {
@@ -523,6 +613,16 @@ const mapDispatchToProps = dispatch => {
       dispatch({
         type: `SET_ACTIVE_PROJECT`,
         id
+      }),
+    setActiveCalendar: tickets =>
+      dispatch({
+        type: `SET_ACTIVE_CALENDAR`,
+        tickets
+      }),
+    setNotes: notes =>
+      dispatch({
+        type: `SET_NOTES`,
+        notes
       })
   };
 };
