@@ -2,6 +2,9 @@ import React, { PureComponent } from "react";
 import { Route, Redirect, Link } from "react-router-dom";
 import fire from "../../fire";
 
+import firebase from "firebase";
+
+
 import "./index.css";
 
 import "antd/dist/antd.css";
@@ -14,6 +17,7 @@ import {
   Dropdown,
   Divider,
   Breadcrumb,
+  message,
   Tabs,
   Tag,
 } from "antd";
@@ -24,7 +28,25 @@ class Navigation extends PureComponent {
   constructor(props) {
     super(props);
 
-    this.state = { mobileMenu: false };
+    this.state = { mobileMenu: false , justSignedOut: false};
+  }
+
+  signout() {
+  
+    console.log("SIGN OUT")
+    firebase.auth().signOut().then(function() {
+      // Sign-out successful.
+      message.success("signed out successfully");
+     
+     
+    }).catch(function(error) {
+      // An error happened.
+      message.error(error);
+
+    });
+    this.props.signoutUser();
+    this.setState({ justSignedOut: true})
+
   }
 
   render() {
@@ -37,25 +59,13 @@ class Navigation extends PureComponent {
         </Menu.Item>
         <div style={{ padding: "5px 12px" }}>
           <div>
-            <b>Christian Bryant</b>
+            <b>{this.props.user.name}</b>
           </div>
-          <div>rva.christian91@gmail.com</div>
+          <div>{this.props.user.email}</div>
         </div>
         <Divider style={{ marginTop: "12px", marginBottom: "12px" }} />
-        <Menu.Item>
-          <div>Settings</div>
-        </Menu.Item>
-        <Menu.Item>
-          <div>Help</div>
-        </Menu.Item>
-        <Menu.Item>
-          <div>Contact Support</div>
-        </Menu.Item>
-        <Menu.Item>
-          <div>Terms of Service</div>
-        </Menu.Item>
-        <Menu.Item>
-          <div>Logout</div>
+        <Menu.Item >
+          <div onClick={ () => { this.signout() } }>Logout</div>
         </Menu.Item>
       </Menu>
     );
@@ -68,8 +78,15 @@ class Navigation extends PureComponent {
       </Menu>
     );
 
+
+    if ( this.state.justSignedOut ) {
+    return (<Redirect to="/" /> )
+    }
+    
+
     return (
       <div className="nav">
+    
         <h1
           style={{
             color: "#1890ff",
@@ -94,16 +111,9 @@ class Navigation extends PureComponent {
           
           :  <div className="nav-buttons">
           
-          <Dropdown overlay={notificationMenu}>
-            <span style={{ marginRight: "12px" }}>
-              <Badge count={1}>
-                <Avatar shape="circle" icon="notification" />
-              </Badge>
-            </span>
-          </Dropdown>
           <Dropdown overlay={profileMenu}>
             <span>
-              <Avatar shape="circle">CB</Avatar>
+              <Avatar shape="circle" src={this.props.user.photoURL}></Avatar>
             </span>
           </Dropdown>
         </div> }
@@ -124,9 +134,6 @@ class Navigation extends PureComponent {
           <div className="mobile-menu">
             <Link to="/" className="mobile-menu__item">
               Projects
-            </Link>
-            <Link to="/" className="mobile-menu__item">
-              Notifications
             </Link>
             <Link to="/" className="mobile-menu__item">
               Account Settings
@@ -178,11 +185,9 @@ const mapStateToProps = ({ user, projects, newIssue }) => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    createCourier: (user, courier) =>
+    signoutUser: () =>
       dispatch({
-        type: `CREATE_COURIER`,
-        user,
-        courier
+        type: `SIGNOUT`,
       })
   };
 };

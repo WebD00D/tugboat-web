@@ -3,6 +3,19 @@ import fire from "../fire";
 import _ from "lodash";
 
 const reducer = (state, action) => {
+
+  if ( action.type === `AUTHENTICATE` ) {
+    return Object.assign({}, state, {
+      user: action.user
+    });
+  }
+
+  if ( action.type === `SIGNOUT` ) {
+    return Object.assign({}, state, {
+      user: {}
+    });
+  }
+
   if (action.type === `SET_PROJECTS`) {
     return Object.assign({}, state, {
       projects: action.projects
@@ -52,13 +65,12 @@ const reducer = (state, action) => {
 const initialState = {
   userTypes: [`ADMIN`, `NON-ADMIN`],
   user: {
-    authenticated: true,
-    id: "bhI3RoqFdWZ6P0pGkzc4mCnjoRN2",
-    type: `ADMIN`,
-    email: "rva.christian91@gmail.com",
-    name: "Christian Bryant"
+    // authenticated: true,
+    // id: "bhI3RoqFdWZ6P0pGkzc4mCnjoRN2",
+    // type: `ADMIN`,
+    // email: "rva.christian91@gmail.com",
+    // name: "Christian Bryant"
   },
-
   notes: [],
   projects: [],
   activeProjectId: "ggtrrfwefkkfkr4",

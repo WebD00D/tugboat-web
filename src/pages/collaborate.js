@@ -183,7 +183,8 @@ class Collaborate extends PureComponent {
     super(props);
 
     this.state = {
-      collaborator: "rva.christian91@gmail.com",
+      collaborator: "NOT SET",
+      emailToCheck: "",
 
       activeProjectDetails: [],
       createNewTicket: false,
@@ -236,12 +237,34 @@ class Collaborate extends PureComponent {
       .on(
         "value",
         function(snapshot) {
-          console.log("active projectr snapshot??", snapshot.val());
+          
           this.props.setActiveProject(p);
           this.props.setCollaboratorProject(snapshot.val());
           this.props.setNextTicketNumber(snapshot.val().TicketNumber);
         }.bind(this)
       );
+  }
+
+  authenticateEmail() {
+    if (this.props.projects.collaborators) {
+      const collabs = this.props.projects.collaborators;
+      const emailToCheck = this.state.emailToCheck;
+
+      let authenticated = Object.keys(collabs).map(key => {
+        return _.includes(collabs[key], emailToCheck);
+      });
+
+      if (_.includes(authenticated, true)) {
+        message.success(`${emailToCheck} is authorized!`);
+        this.setState({
+          collaborator: emailToCheck
+        });
+      } else {
+        message.error(`${emailToCheck} is not authorized.`);
+      }
+    } else {
+      message.error(`Email is not authorized.`);
+    }
   }
 
   createNewTicket() {
@@ -339,7 +362,6 @@ class Collaborate extends PureComponent {
       `/tickets-by-user/${this.state.creatorId}/${this.state.edit_id}`
     ] = ticketData;
 
- 
     fire
       .database()
       .ref()
@@ -352,7 +374,7 @@ class Collaborate extends PureComponent {
       edit_ticketNumber: "",
       edit_title: "",
       edit_description: "",
-      
+
       show_edit_modal: false
     });
   }
@@ -595,9 +617,7 @@ class Collaborate extends PureComponent {
 
         <UI.PageContainerSmall>
           <UI.Box>
-          
-
-            <h1 style={{fontWeight: 700, fontSize: "40px" }}>
+            <h1 style={{ fontWeight: 700, fontSize: "40px" }}>
               {this.props.projects.title}
             </h1>
             <div
@@ -664,6 +684,30 @@ class Collaborate extends PureComponent {
         </UI.PageContainerSmall>
 
         <Modal
+          title={`Collaborator authentication`}
+          visible={this.state.collaborator === "NOT SET"}
+          okText="Authenticate"
+          closable={false}
+          footer={false}
+        >
+          <UI.FormField>
+            <label>Email address</label>
+            <Input
+              onChange={e => {
+                this.setState({ emailToCheck: e.target.value });
+              }}
+              placeholder="Please enter an authorized email address"
+            />
+          </UI.FormField>
+
+          <UI.FormField>
+            <Button onClick={() => this.authenticateEmail()} type="primary">
+              Verify email
+            </Button>
+          </UI.FormField>
+        </Modal>
+
+        <Modal
           title={`New Ticket #${this.props.nextTicketNumber}`}
           visible={this.state.createNewTicket}
           onOk={() => this.createNewTicket()}
@@ -690,10 +734,6 @@ class Collaborate extends PureComponent {
               placeholder="Ticket description"
             />
           </UI.FormField>
-
-          
-
-         
         </Modal>
 
         {/* EDIT TICKET MODAL */}
@@ -704,12 +744,10 @@ class Collaborate extends PureComponent {
           onOk={() => this.editTicket()}
           onCancel={() => this.setState({ show_edit_modal: false })}
           okText="Save ticket"
-          
         >
           <UI.FormField>
             <label>Ticket Title</label>
             <Input
-           
               value={this.state.edit_title}
               onChange={e => {
                 this.setState({ edit_title: e.target.value });
@@ -732,13 +770,8 @@ class Collaborate extends PureComponent {
 
           <UI.FormField>
             <label>Time Estimate</label>
-            <Input
-             disabled
-              value={`${this.state.edit_eta} days`}
-            />
+            <Input disabled value={`${this.state.edit_eta} days`} />
           </UI.FormField>
-
-
         </Modal>
       </LolipopAdmin>
     );
@@ -786,10 +819,10 @@ const mapDispatchToProps = dispatch => {
         type: `SET_NEXT_TICKET_NUMBER`,
         number
       }),
-      setActiveProject: id =>
+    setActiveProject: id =>
       dispatch({
-          type: `SET_ACTIVE_PROJECT`,
-          id
+        type: `SET_ACTIVE_PROJECT`,
+        id
       })
   };
 };

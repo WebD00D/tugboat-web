@@ -262,9 +262,9 @@ class Dashboard extends PureComponent {
                 }}
               >
                 <div style={{ marginBottom: "1px" }}>
-                  <b>Get Unlimited Projects</b>
+                  <b>Get unlimited projects</b>
                 </div>
-                <div style={{ marginBottom: "12px" }}> $4.99 / month </div>
+                <div style={{ marginBottom: "12px" }}> $2.99 / month </div>
 
                 <Link to="/upgrade">
                   <Icon type="star-o" style={{ color: "#DDC482" }} /> Upgrade

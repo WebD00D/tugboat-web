@@ -988,14 +988,14 @@ class Project extends PureComponent {
               justifyContent: "space-between"
             }}
           >
-            <UI.FormField>
+            {/* <UI.FormField>
               <Checkbox
                 checked={this.state.sendInvite}
                 onChange={e => this.setState({ sendInvite: e.target.checked })}
               >
                 Send invite
               </Checkbox>
-            </UI.FormField>
+            </UI.FormField> */}
             <Button onClick={() => this.addCollaborators()} >
               Add Collaborator
             </Button>
