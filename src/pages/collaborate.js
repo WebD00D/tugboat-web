@@ -208,7 +208,9 @@ class Collaborate extends PureComponent {
       tickets_done: 0,
       tickets_inQueue: 0,
       tickets_planning: 0,
-      tickets_backlog: 0
+      tickets_backlog: 0,
+
+      noProjectFound: false
     };
   }
 
@@ -237,10 +239,17 @@ class Collaborate extends PureComponent {
       .on(
         "value",
         function(snapshot) {
+
+          if ( !snapshot.val() ) {
+            console.log("project is null!!!")
+
+            this.setState({ noProjectFound: true })
+          } else {
+            this.props.setActiveProject(p);
+            this.props.setCollaboratorProject(snapshot.val());
+            this.props.setNextTicketNumber(snapshot.val().TicketNumber);
+          }
           
-          this.props.setActiveProject(p);
-          this.props.setCollaboratorProject(snapshot.val());
-          this.props.setNextTicketNumber(snapshot.val().TicketNumber);
         }.bind(this)
       );
   }
@@ -301,8 +310,7 @@ class Collaborate extends PureComponent {
 
     updates[`/projects/${userId}/${activeProjectId}/lastUpdated`] = Date.now();
 
-    // add ticket to users all ticket list
-    updates[`/tickets-by-user/${userId}/${newPostKey}`] = ticketData;
+ 
 
     fire
       .database()
@@ -357,10 +365,7 @@ class Collaborate extends PureComponent {
       `/projects/${this.state.creatorId}/${activeProjectId}/lastUpdated`
     ] = Date.now();
 
-    // add ticket to users all ticket list
-    updates[
-      `/tickets-by-user/${this.state.creatorId}/${this.state.edit_id}`
-    ] = ticketData;
+  
 
     fire
       .database()
@@ -415,9 +420,18 @@ class Collaborate extends PureComponent {
             ticketNumberBG = "#cccccc";
             icon = "book";
             break;
+          case "Archive":
+            ticketNumberBG = "#f5f5f5";
+            icon = "folder";
+            break;
 
           default:
             break;
+        }
+
+
+        if ( allTickets[key].status === "Archive" ) {
+          return;
         }
 
         return (
@@ -509,6 +523,10 @@ class Collaborate extends PureComponent {
             ticketNumberBG = "#cccccc";
             icon = "book";
             break;
+          case "Archive":
+            ticketNumberBG = "#f5f5f5";
+            icon = "folder";
+            break;
 
           default:
             break;
@@ -569,6 +587,7 @@ class Collaborate extends PureComponent {
     let inQueueCount = 0;
     let planningCount = 0;
     let backlogCount = 0;
+    let ArchiveCount = 0;
 
     if (this.props.ticketsByProject) {
       let inProgress = _.filter(this.props.ticketsByProject, function(item) {
@@ -600,11 +619,20 @@ class Collaborate extends PureComponent {
         return item.status === "Backlog";
       });
       backlogCount = backlog.length;
+      let archive = _.filter(this.props.ticketsByProject, function(item) {
+        return item.status === "Archive";
+      });
+      ArchiveCount = archive.length;
     }
 
     const projectLastUpdated = moment(this.props.projects.lastUpdated).format(
       "MM.DD.YY @h:mm a"
     );
+
+
+    if ( this.state.noProjectFound ) {
+      return <Redirect to="/404" />
+    }
 
     return (
       <LolipopAdmin>
@@ -654,8 +682,13 @@ class Collaborate extends PureComponent {
               <TabPane
                 tab={`All (${
                   this.props.ticketsByProject
-                    ? Object.keys(this.props.ticketsByProject).length
-                    : ""
+                    ? Number(inProgressCount) +
+                      Number(verifyingCount) +
+                      Number(doneCount) +
+                      Number(inQueueCount) +
+                      Number(planningCount) +
+                      Number(backlogCount)
+                    : "0"
                 })`}
                 key="1"
               >
@@ -678,6 +711,9 @@ class Collaborate extends PureComponent {
               </TabPane>
               <TabPane tab={`Backlog (${backlogCount})`} key="7">
                 {this.renderTickets("Backlog")}
+              </TabPane>
+              <TabPane tab={`Archive (${ArchiveCount})`} key="8">
+                {this.renderTickets("Archive")}
               </TabPane>
             </Tabs>
           </UI.Box>

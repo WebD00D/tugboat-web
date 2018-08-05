@@ -208,7 +208,11 @@ class Project extends PureComponent {
 
       showCollaboratorModal: false,
       whitelabeledEmail: "",
-      sendInvite: true
+      sendInvite: true,
+
+      showDeleteModal: false,
+      deleteProject: false,
+      projectDeleted: false,
     };
   }
 
@@ -229,13 +233,15 @@ class Project extends PureComponent {
 
     // pull next ticket number from project endpoint ..
 
+    
+
     fire
       .database()
       .ref(`/projects/${this.props.user.id}/${this.props.activeProjectId}`)
       .on(
         "value",
         function(snapshot) {
-          this.props.setNextTicketNumber(snapshot.val().TicketNumber);
+           snapshot.val() && this.props.setNextTicketNumber(snapshot.val().TicketNumber);
         }.bind(this)
       );
   }
@@ -268,17 +274,20 @@ class Project extends PureComponent {
       .update(updates);
 
     this.setState({
-      whitelabeledEmail: "",
+      whitelabeledEmail: ""
     });
 
     message.success(`${email} added as a collaborator!`);
   }
 
   removeCollaborator(id) {
-
     let updates = {};
 
-    updates[`/projects/${this.props.user.id}/${this.props.activeProjectId}/collaborators/${id}`] = null;
+    updates[
+      `/projects/${this.props.user.id}/${
+        this.props.activeProjectId
+      }/collaborators/${id}`
+    ] = null;
     fire
       .database()
       .ref()
@@ -286,11 +295,9 @@ class Project extends PureComponent {
 
     message.error(`removed collaborator`);
 
-
     this.setState({
-      whitelabeledEmail: "",
+      whitelabeledEmail: ""
     });
-
   }
 
   createNewTicket() {
@@ -319,7 +326,7 @@ class Project extends PureComponent {
 
     if (this.state.newProjectStatus === "In Progress") {
       let Today = moment(Date.now());
-      let Tomorrow = moment(Today).add(Number(this.state.eta), "days");
+      let Tomorrow = moment(Today).add((Number(this.state.eta)-1), "days");
       let TodayUnix = moment(Today).format("x");
       let TomorrowUnix = moment(Tomorrow).format("x");
 
@@ -333,7 +340,7 @@ class Project extends PureComponent {
       ].title;
 
       updates[
-        `/in-progress-calendar/${this.props.user.id}/${newPostKey}/`
+        `/in-progress-calendar/${this.props.user.id}/${activeProjectId}/${newPostKey}/`
       ] = ticketData;
     }
 
@@ -355,12 +362,6 @@ class Project extends PureComponent {
       }/lastUpdated`
     ] = Date.now();
 
-    // add ticket to users all ticket list
-    updates[
-      `/tickets-by-user/${this.props.user.id}/${newPostKey}`
-    ] = ticketData;
-
-    // .ref(`/projects/${this.props.user.id}/${this.props.activeProjectId}`)
 
     fire
       .database()
@@ -378,6 +379,39 @@ class Project extends PureComponent {
       newProjectETA: "",
       newProjectStatus: ""
     });
+  }
+
+
+  deleteProject() {
+
+    const activeProjectId = this.props.activeProjectId;
+    let updates = {};
+
+    updates[
+      `/tickets-by-project/${activeProjectId}/`
+    ] = null;
+
+    updates[
+      `/projects/${this.props.user.id}/${activeProjectId}/`
+    ] = null;
+
+    updates[
+      `/in-progress-calendar/${this.props.user.id}/${activeProjectId}/`
+    ] = null;
+
+
+    fire
+    .database()
+    .ref()
+    .update(updates);
+
+    message.error(`Project deleted!`);
+
+    this.setState({
+      projectDeleted: true
+    })
+
+
   }
 
   showTicketDetails(ticket) {
@@ -410,7 +444,7 @@ class Project extends PureComponent {
 
     if (this.state.edit_status === "In Progress") {
       let Today = moment(Date.now());
-      let Tomorrow = moment(Today).add(Number(this.state.edit_eta), "days");
+      let Tomorrow = moment(Today).add((Number(this.state.edit_eta) - 1), "days");
       let TodayUnix = moment(Today).format("x");
       let TomorrowUnix = moment(Tomorrow).format("x");
 
@@ -423,14 +457,15 @@ class Project extends PureComponent {
         this.props.activeProjectId
       ].title;
 
+  
       updates[
-        `/in-progress-calendar/${this.props.user.id}/${this.state.edit_id}/`
+        `/in-progress-calendar/${this.props.user.id}/${activeProjectId}/${this.state.edit_id}/`
       ] = ticketData;
+
     } else {
       // Remove from In-Progress..
       updates[
-        `/in-progress-calendar/${this.props.user.id}/${this.state.edit_id}/`
-      ] = null;
+        `/in-progress-calendar/${this.props.user.id}/${activeProjectId}/${this.state.edit_id}/`] = null;
     }
 
     // update tickets-by-project
@@ -444,10 +479,7 @@ class Project extends PureComponent {
       }/lastUpdated`
     ] = Date.now();
 
-    // edit ticket on users all ticket list
-    updates[
-      `/tickets-by-user/${this.props.user.id}/${this.state.edit_id}`
-    ] = ticketData;
+
 
     fire
       .database()
@@ -503,9 +535,17 @@ class Project extends PureComponent {
             ticketNumberBG = "#cccccc";
             icon = "book";
             break;
+          case "Archive":
+            ticketNumberBG = "#f5f5f5";
+            icon = "folder";
+            break;
 
           default:
             break;
+        }
+
+        if ( allTickets[key].status === "Archive" ) {
+          return;
         }
 
         return (
@@ -558,12 +598,9 @@ class Project extends PureComponent {
 
   renderTickets(status) {
     if (this.props.ticketsByProject) {
-
       const allTickets = this.props.ticketsByProject;
 
       let Tickets = Object.keys(allTickets).map(key => {
-
-        
         const lastUpdated = moment(allTickets[key].lastUpdated).format(
           "MM.DD.YY, h:mm a"
         );
@@ -599,6 +636,10 @@ class Project extends PureComponent {
           case "Backlog":
             ticketNumberBG = "#cccccc";
             icon = "book";
+            break;
+          case "Archive":
+            ticketNumberBG = "#f5f5f5";
+            icon = "folder";
             break;
 
           default:
@@ -654,12 +695,19 @@ class Project extends PureComponent {
   }
 
   render() {
+
+
+    if (this.state.projectDeleted) {
+      return <Redirect to="/projects" />
+    }
+
     let inProgressCount = 0;
     let verifyingCount = 0;
     let doneCount = 0;
     let inQueueCount = 0;
     let planningCount = 0;
     let backlogCount = 0;
+    let ArchiveCount = 0;
 
     if (this.props.ticketsByProject) {
       let inProgress = _.filter(this.props.ticketsByProject, function(item) {
@@ -691,6 +739,11 @@ class Project extends PureComponent {
         return item.status === "Backlog";
       });
       backlogCount = backlog.length;
+
+      let archive = _.filter(this.props.ticketsByProject, function(item) {
+        return item.status === "Archive";
+      });
+      ArchiveCount = archive.length;
     }
 
     const projectLastUpdated = moment(
@@ -702,17 +755,21 @@ class Project extends PureComponent {
       Object.keys(
         this.props.projects[this.props.activeProjectId].collaborators
       ).map(key => {
+        let collaborator = this.props.projects[this.props.activeProjectId]
+          .collaborators[key];
+        console.log(collaborator);
 
-          let collaborator =  this.props.projects[this.props.activeProjectId].collaborators[key];
-          console.log(collaborator)
-
-          return (
-            <List.Item key={key}>
-                {collaborator.email}
-                <Button onClick={()=> this.removeCollaborator(collaborator.id)} type="danger"><Icon type="close-circle-o" /> Remove</Button>
-            </List.Item>
-          )
-
+        return (
+          <List.Item key={key}>
+            {collaborator.email}
+            <Button
+              onClick={() => this.removeCollaborator(collaborator.id)}
+              type="danger"
+            >
+              <Icon type="close-circle-o" /> Remove
+            </Button>
+          </List.Item>
+        );
       });
 
     return (
@@ -723,34 +780,27 @@ class Project extends PureComponent {
         />
         <UI.PageContainerSmall>
           <UI.Box>
+
+
             <Link style={{ float: "right" }} to="/projects">
               <Icon type="arrow-left" /> Back to Dashboard
             </Link>
-            <h1 style={{fontWeight: 700, fontSize: "40px"}}>
+
+
+            <h1 className="project-title">
               {this.state.activeProjectDetails
                 ? this.state.activeProjectDetails.title
                 : "No project set"}{" "}
             </h1>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between"
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column"
-                }}
-              >
+
+
+            <div className="project-action-header">
                 <div>
-                <Tag style={{ marginLeft: "8px" }} color="geekblue">
+                  <Tag color="geekblue">
                     <Icon type="clock-circle-o" /> last update:{" "}
                     {projectLastUpdated}
                   </Tag>
                 </div>
-              </div>
               <div>
                 <Button
                   style={{ marginRight: "12px" }}
@@ -766,18 +816,18 @@ class Project extends PureComponent {
                   <Icon type="share-alt" /> Sharing
                 </Button>
 
-                <Button type="danger">
-                  <Icon type="delete" />
+                <Button onClick={ () => this.setState({ showDeleteModal: true }) } type="danger">
+                  <Icon type="delete" /> Delete
                 </Button>
               </div>
             </div>
 
-            <Tabs style={{ marginTop: "60px" }} defaultActiveKey="1">
+            <Tabs  defaultActiveKey="1">
               <TabPane
                 tab={`All (${
                   this.props.ticketsByProject
-                    ? Object.keys(this.props.ticketsByProject).length
-                    : ""
+                    ? (Number(inProgressCount) + Number(verifyingCount) + Number(doneCount) + Number(inQueueCount) + Number(planningCount) + Number(backlogCount) )  
+                    : "0"
                 })`}
                 key="1"
               >
@@ -800,6 +850,9 @@ class Project extends PureComponent {
               </TabPane>
               <TabPane tab={`Backlog (${backlogCount})`} key="7">
                 {this.renderTickets("Backlog")}
+              </TabPane>
+              <TabPane tab={`Archive (${ArchiveCount})`} key="8">
+                {this.renderTickets("Archive")}
               </TabPane>
             </Tabs>
           </UI.Box>
@@ -878,6 +931,7 @@ class Project extends PureComponent {
               <Option value="In Progress">In Progress</Option>
               <Option value="Verifying">Verifying</Option>
               <Option value="Done">Done</Option>
+              <Option value="Archive">Archive</Option>
             </Select>
           </UI.FormField>
         </Modal>
@@ -960,6 +1014,7 @@ class Project extends PureComponent {
               <Option value="In Progress">In Progress</Option>
               <Option value="Verifying">Verifying</Option>
               <Option value="Done">Done</Option>
+              <Option value="Archive">Archive</Option>
             </Select>
           </UI.FormField>
         </Modal>
@@ -970,7 +1025,6 @@ class Project extends PureComponent {
           onCancel={() => this.setState({ showCollaboratorModal: false })}
           footer={null}
         >
-        
           <UI.FormField>
             <label>Collaborator email</label>
             <Input
@@ -996,7 +1050,7 @@ class Project extends PureComponent {
                 Send invite
               </Checkbox>
             </UI.FormField> */}
-            <Button onClick={() => this.addCollaborators()} >
+            <Button onClick={() => this.addCollaborators()}>
               Add Collaborator
             </Button>
           </div>
@@ -1004,22 +1058,39 @@ class Project extends PureComponent {
           <Divider />
 
           <UI.FormField>
-          <label>Share URL</label>
+            <label>Share URL</label>
 
             <div className="share-box">
               <Icon type="global" />{" "}
-              {`http://localhost:8000/collaborate?u=${
-                this.props.user.id
-              }&p=${this.props.activeProjectId}`}
+              {`http://localhost:8000/collaborate?u=${this.props.user.id}&p=${
+                this.props.activeProjectId
+              }`}
             </div>
           </UI.FormField>
 
-          <List
-            header={<b>Collaborators</b>}
-            bordered>
-             
-              {collaborators}
-            </List>
+          <List header={<b>Collaborators</b>} bordered>
+            {collaborators}
+          </List>
+        </Modal>
+
+
+        <Modal
+          title={`Delete Project`}
+          visible={this.state.showDeleteModal}
+          onCancel={() => this.setState({ showDeleteModal: false })}
+          footer={null}
+        >
+            <h2 style={{ fontWeight: 700, fontSize: "22px", color: "red" }}>
+              {this.state.activeProjectDetails
+                ? `Do you really want to delete "${this.state.activeProjectDetails.title}"?`
+                : "Do you really want to delete this project?" }
+            </h2>
+            <h4>This project can't be recovered after a delete. All active calendar tickets associated with this project will be removed.</h4>
+            <Checkbox checked={this.state.deleteProject} onChange={ () => this.setState({ deleteProject: !this.state.deleteProject }) } >Yes, I want to delete {this.state.activeProjectDetails.title} </Checkbox>
+            <div style={{marginTop:'12px'}}>
+            <Button disabled={!this.state.deleteProject} type="danger" onClick={() => this.deleteProject()}>
+              Delete Project
+            </Button></div>
         </Modal>
       </LolipopAdmin>
     );

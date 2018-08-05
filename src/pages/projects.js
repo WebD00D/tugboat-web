@@ -31,7 +31,8 @@ import {
   Icon,
   Tooltip,
   Timeline,
-  Tabs
+  Tabs,
+  Alert,
 } from "antd";
 
 const { Option, OptGroup } = Select;
@@ -65,6 +66,13 @@ const ProjectCard = styled.div`
   border: 1px solid #ddd;
   position: relative;
   cursor: pointer;
+
+  @media(max-width:700px) {
+    margin-right: 0px;
+    width: 100%;
+    max-width: 100%;
+    height: 120px;
+  }
 
   h3 {
     margin-bottom: 0px;
@@ -235,14 +243,20 @@ class Dashboard extends PureComponent {
       this.props.inProgressTickets &&
         Object.keys(this.props.inProgressTickets).map(key => {
           let ticket = this.props.inProgressTickets[key];
-         
 
           inProgressTickets.push(ticket);
         });
 
+
+      let views = window.innerWidth <= 700 ? "agenda" : ["month", "agenda"]
+
+
+   
+
       return (
         <Tabs defaultActiveKey="1">
           <TabPane
+            className="tab-main"
             tab={
               <span>
                 <Icon type="code-o" />Projects
@@ -250,7 +264,21 @@ class Dashboard extends PureComponent {
             }
             key="1"
           >
-            <div style={{ display: "flex", flexWrap: "wrap" }}>
+
+  
+            {!this.props.hasProjectDetails ? (
+              <Button
+                onClick={() => this.setState({ createNewProject: true })}
+                type="primary"
+                 size="large"
+              >
+                <Icon type="plus-circle-o" /> New Project
+              </Button>
+            ) : (
+              ""
+            )}
+         
+            <div className="project-card-wrapper">
               {_.reverse(Projects)}
               <ProjectCard
                 style={{
@@ -275,6 +303,7 @@ class Dashboard extends PureComponent {
           </TabPane>
           <TabPane
             style={{ height: "600px" }}
+            
             tab={
               <span>
                 <Icon type="calendar" />Active Calendar
@@ -282,6 +311,14 @@ class Dashboard extends PureComponent {
             }
             key="2"
           >
+          <div className="calendar-mobile-alert">
+            
+          <Alert message="Please view Active Calendar on desktop or tablet. We're still figuring out our mobile calendar design. #sorrynotsorry  " type="warning" showIcon />
+            
+
+
+          </div>
+          <div className="calendar-pane">
             <BigCalendar
               events={inProgressTickets}
               startAccessor="startDate"
@@ -344,7 +381,8 @@ class Dashboard extends PureComponent {
                 }
               }}
             />
-            }
+            </div>
+            
           </TabPane>
           <TabPane
             tab={
@@ -372,7 +410,6 @@ class Dashboard extends PureComponent {
               </Timeline>
             </div>
           </TabPane>
-          
         </Tabs>
       );
     } else {
@@ -486,7 +523,17 @@ class Dashboard extends PureComponent {
       .on(
         "value",
         function(snapshot) {
-          this.props.setActiveCalendar(snapshot.val());
+          let activeTickets = [];
+          let ticketsInProgress = snapshot.val();
+          // tickets are organized by project, so we need to flatten it to just tickets.
+          ticketsInProgress &&
+            Object.keys(ticketsInProgress).map(key => {
+              let ticketsByProject = ticketsInProgress[key];
+              Object.keys(ticketsByProject).map(k => {
+                activeTickets.push(ticketsByProject[k]);
+              });
+            });
+          this.props.setActiveCalendar(activeTickets);
         }.bind(this)
       );
 
@@ -511,20 +558,7 @@ class Dashboard extends PureComponent {
       <LolipopAdmin>
         <Navigation />
         <UI.PageContainer>
-          <UI.Box>
-            {" "}
-            {!this.props.hasProjectDetails ? (
-              <Button
-                onClick={() => this.setState({ createNewProject: true })}
-                type="primary"
-                style={{ position: "absolute", right: "72px" }}
-              >
-                <Icon type="plus-circle-o" /> New Project
-              </Button>
-            ) : (
-              ""
-            )}
-          </UI.Box>
+         
           <UI.Box>{this.renderProjects()}</UI.Box>
         </UI.PageContainer>
 
@@ -585,7 +619,6 @@ class Dashboard extends PureComponent {
               }}
             />
           </UI.FormField>
-
         </Modal>
       </LolipopAdmin>
     );

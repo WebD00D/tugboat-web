@@ -73,7 +73,7 @@ const initialState = {
   },
   notes: [],
   projects: [],
-  activeProjectId: "ggtrrfwefkkfkr4",
+  activeProjectId: "",
   nextTicketNumber: 1000,
 
   tickets: [], // all app tickets
