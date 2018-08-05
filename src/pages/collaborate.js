@@ -210,6 +210,8 @@ class Collaborate extends PureComponent {
       tickets_planning: 0,
       tickets_backlog: 0,
 
+      ticket_credit_left: 0,
+
       noProjectFound: false
     };
   }
@@ -232,6 +234,17 @@ class Collaborate extends PureComponent {
           this.props.setTicketsByProject(snapshot.val());
         }.bind(this)
       );
+
+
+    fire
+    .database()
+    .ref(`/credits/${u}/`)
+    .on(
+      "value",
+      function(snapshot) {
+        this.props.setTicketCredit(snapshot.val().tickets) 
+      }.bind(this)
+    );
 
     fire
       .database()
@@ -310,7 +323,9 @@ class Collaborate extends PureComponent {
 
     updates[`/projects/${userId}/${activeProjectId}/lastUpdated`] = Date.now();
 
- 
+    updates[
+      `/credits/${userId}/tickets/`] = (Number(this.props.ticketCredit) - 1);
+
 
     fire
       .database()
@@ -641,6 +656,7 @@ class Collaborate extends PureComponent {
           collaborator={this.state.collaborator}
           hasProjectDetails={true}
           handleNewProject={() => this.setState({ createNewProject: true })}
+          collabTicketsLeft={this.props.ticketCredit}
         />
 
         <UI.PageContainerSmall>
@@ -669,12 +685,15 @@ class Collaborate extends PureComponent {
                 </div>
               </div>
               <div>
+              <small style={{marginRight: "8px"}}> Tickets remaining: {this.props.ticketCredit} </small>
                 <Button
+                  disabled={this.props.ticketCredit === 0}
                   type="primary"
                   onClick={() => this.setState({ createNewTicket: true })}
                 >
                   New Ticket
                 </Button>
+            
               </div>
             </div>
 
@@ -780,6 +799,8 @@ class Collaborate extends PureComponent {
           onOk={() => this.editTicket()}
           onCancel={() => this.setState({ show_edit_modal: false })}
           okText="Save ticket"
+          footer={this.props.ticketCredit === 0 ? false : true}
+
         >
           <UI.FormField>
             <label>Ticket Title</label>
@@ -823,7 +844,8 @@ const mapStateToProps = ({
   activeProjectId,
   tickets,
   ticketsByProject,
-  nextTicketNumber
+  nextTicketNumber,
+  ticketCredit
 }) => {
   return {
     user,
@@ -834,7 +856,8 @@ const mapStateToProps = ({
     activeProjectId,
     tickets,
     ticketsByProject,
-    nextTicketNumber
+    nextTicketNumber,
+    ticketCredit
   };
 };
 
@@ -859,6 +882,11 @@ const mapDispatchToProps = dispatch => {
       dispatch({
         type: `SET_ACTIVE_PROJECT`,
         id
+      }),
+      setTicketCredit: credit =>
+      dispatch({
+        type: `SET_CREDIT`,
+        credit
       })
   };
 };

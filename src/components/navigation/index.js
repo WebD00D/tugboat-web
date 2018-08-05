@@ -2,8 +2,9 @@ import React, { PureComponent } from "react";
 import { Route, Redirect, Link } from "react-router-dom";
 import fire from "../../fire";
 
-import firebase from "firebase";
 
+
+import firebase from "firebase";
 
 import "./index.css";
 
@@ -18,8 +19,9 @@ import {
   Divider,
   Breadcrumb,
   message,
+  Alert,
   Tabs,
-  Tag,
+  Tag
 } from "antd";
 
 import { connect } from "react-redux";
@@ -28,35 +30,29 @@ class Navigation extends PureComponent {
   constructor(props) {
     super(props);
 
-    this.state = { mobileMenu: false , justSignedOut: false};
+    this.state = { mobileMenu: false, justSignedOut: false };
   }
 
   signout() {
-  
-    console.log("SIGN OUT")
-    firebase.auth().signOut().then(function() {
-      // Sign-out successful.
-      message.success("signed out successfully");
-     
-     
-    }).catch(function(error) {
-      // An error happened.
-      message.error(error);
-
-    });
+    console.log("SIGN OUT");
+    firebase
+      .auth()
+      .signOut()
+      .then(function() {
+        // Sign-out successful.
+        message.success("signed out successfully");
+      })
+      .catch(function(error) {
+        // An error happened.
+        message.error(error);
+      });
     this.props.signoutUser();
-    this.setState({ justSignedOut: true})
-
+    this.setState({ justSignedOut: true });
   }
 
   render() {
     const profileMenu = (
       <Menu>
-        <Menu.Item>
-          <Button style={{ width: "100%" }} type="primary">
-            Upgrade to Pro
-          </Button>
-        </Menu.Item>
         <div style={{ padding: "5px 12px" }}>
           <div>
             <b>{this.props.user.name}</b>
@@ -64,8 +60,14 @@ class Navigation extends PureComponent {
           <div>{this.props.user.email}</div>
         </div>
         <Divider style={{ marginTop: "12px", marginBottom: "12px" }} />
-        <Menu.Item >
-          <div onClick={ () => { this.signout() } }>Logout</div>
+        <Menu.Item>
+          <div
+            onClick={() => {
+              this.signout();
+            }}
+          >
+            Logout
+          </div>
         </Menu.Item>
       </Menu>
     );
@@ -78,117 +80,135 @@ class Navigation extends PureComponent {
       </Menu>
     );
 
-
-    if ( this.state.justSignedOut ) {
-    return (<Redirect to="/" /> )
+    if (this.state.justSignedOut) {
+      return <Redirect to="/" />;
     }
-    
+
+    let noTixMessage = this.props.collab ? "Feeling generous? Get your beloved freelancer 100 more for $4.99" : "Click here to get more."
 
     return (
-      <div className="nav">
-    
-        <h1
-          style={{
-            color: "#1890ff",
-            marginBottom: "0px",
-            display: "flex",
-            alignItems: "center"
-          }}
-        >
-          <img
-            style={{ height: "40px", marginRight: "8px" }}
-            src={require("../../assets/icons/steering-wheel.svg")}
-          />{" "}
-          <b>tugboat</b>
-        </h1>
-
-        { this.props.collab ?
-          <div>
-            <div style={{textAlign: "right"}}><small>Collaborating as:</small></div>
-
-           <Tag style={{marginRight: "0px"}} color="#108ee9">{this.props.collaborator}</Tag></div>
-
-          
-          :  <div className="nav-buttons">
-          
-          <Dropdown overlay={profileMenu}>
-            <span>
-              <Avatar shape="circle" src={this.props.user.photoURL}></Avatar>
-            </span>
-          </Dropdown>
-        </div> }
-       
-        
-
-        <Icon
-          onClick={() => {
-            this.setState({
-              mobileMenu: !this.state.mobileMenu
-            });
-          }}
-          className="mobile-menu-icon"
-          style={{ fontSize: "30px" }}
-          type="ellipsis"
-        />
-        {this.state.mobileMenu ? (
-          <div className="mobile-menu">
-            <Link to="/" className="mobile-menu__item">
-              Projects
-            </Link>
-            <Link to="/" className="mobile-menu__item">
-              Account Settings
-            </Link>
-            <Link to="/" className="mobile-menu__item">
-              Help Desk
-            </Link>
-            <Link to="/" className="mobile-menu__item">
-              Upgrade to Pro
-            </Link>
-            <div
-              onClick={() => this.setState({ mobileMenu: false })}
-              className="mobile-menu__item"
-            >
-              Close
-            </div>
-            <div to="/" className="mobile-menu__item">
-              <h1
-                style={{
-                  color: "#1890ff",
-                  marginBottom: "0px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <img
-                  style={{ height: "40px", marginRight: "8px" }}
-                  src={require("../../assets/icons/steering-wheel.svg")}
-                />{" "}
-                <b>tugboat</b>
-              </h1>
-            </div>
-
-          </div>
+      <div>
+        {this.props.ticketCredit === 0  ? (
+          <Link to="/">
+            <Alert
+              message="No tickets left!"
+              description={noTixMessage}
+              type="error"
+              showIcon
+              banner
+            />
+            
+          </Link>
         ) : (
           ""
         )}
 
+        <div className="nav">
+       
+          <h1
+            style={{
+              color: "#1890ff",
+              marginBottom: "0px",
+              display: "flex",
+              alignItems: "center"
+            }}
+          >
+            <img
+              style={{ height: "40px", marginRight: "8px" }}
+              src={require("../../assets/icons/steering-wheel.svg")}
+            />{" "}
+            <b>tugboat</b>
+          </h1>
 
+          {this.props.collab ? (
+            <div>
+              <div style={{ textAlign: "right" }}>
+                <small>Collaborating as:</small>
+              </div>
+
+              <Tag style={{ marginRight: "0px" }} color="#108ee9">
+                {this.props.collaborator}
+              </Tag>
+            </div>
+          ) : (
+            <div className="nav-buttons">
+              <Tag color={this.props.ticketCredit == 0 ? "red" : ""}>
+                tickets: {this.props.ticketCredit}
+              </Tag>
+
+              <Dropdown overlay={profileMenu}>
+                <span>
+                  <Avatar shape="circle" src={this.props.user.photoURL} />
+                </span>
+              </Dropdown>
+            </div>
+          )}
+
+          <Icon
+            onClick={() => {
+              this.setState({
+                mobileMenu: !this.state.mobileMenu
+              });
+            }}
+            className="mobile-menu-icon"
+            style={{ fontSize: "30px" }}
+            type="ellipsis"
+          />
+          {this.state.mobileMenu ? (
+            <div className="mobile-menu">
+              <div
+                className="mobile-menu__item"
+                onClick={() => {
+                  this.signout();
+                }}
+              >
+                Logout
+              </div>
+
+              <div
+                onClick={() => this.setState({ mobileMenu: false })}
+                className="mobile-menu__item"
+              >
+                Close
+              </div>
+              <div to="/" className="mobile-menu__item">
+                <h1
+                  style={{
+                    color: "#1890ff",
+                    marginBottom: "0px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <img
+                    style={{ height: "40px", marginRight: "8px" }}
+                    src={require("../../assets/icons/steering-wheel.svg")}
+                  />{" "}
+                  <b>tugboat</b>
+                </h1>
+              </div>
+            </div>
+          ) : (
+            ""
+          )}
+        </div>
       </div>
     );
   }
 }
 
-const mapStateToProps = ({ user, projects, newIssue }) => {
-  return { user, projects, newIssue };
+const mapStateToProps = ({ user, projects, newIssue, ticketCredit }) => {
+  return { user, projects, newIssue, ticketCredit };
 };
 
 const mapDispatchToProps = dispatch => {
   return {
     signoutUser: () =>
       dispatch({
-        type: `SIGNOUT`,
+        type: `SIGNOUT`
       })
+      
   };
 };
 

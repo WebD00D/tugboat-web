@@ -32,7 +32,7 @@ import {
   Tooltip,
   Timeline,
   Tabs,
-  Alert,
+  Alert
 } from "antd";
 
 const { Option, OptGroup } = Select;
@@ -67,7 +67,7 @@ const ProjectCard = styled.div`
   position: relative;
   cursor: pointer;
 
-  @media(max-width:700px) {
+  @media (max-width: 700px) {
     margin-right: 0px;
     width: 100%;
     max-width: 100%;
@@ -247,11 +247,7 @@ class Dashboard extends PureComponent {
           inProgressTickets.push(ticket);
         });
 
-
-      let views = window.innerWidth <= 700 ? "agenda" : ["month", "agenda"]
-
-
-   
+      let views = window.innerWidth <= 700 ? "agenda" : ["month", "agenda"];
 
       return (
         <Tabs defaultActiveKey="1">
@@ -264,20 +260,18 @@ class Dashboard extends PureComponent {
             }
             key="1"
           >
-
-  
             {!this.props.hasProjectDetails ? (
               <Button
                 onClick={() => this.setState({ createNewProject: true })}
                 type="primary"
-                 size="large"
+                size="large"
               >
                 <Icon type="plus-circle-o" /> New Project
               </Button>
             ) : (
               ""
             )}
-         
+
             <div className="project-card-wrapper">
               {_.reverse(Projects)}
               <ProjectCard
@@ -290,20 +284,19 @@ class Dashboard extends PureComponent {
                 }}
               >
                 <div style={{ marginBottom: "1px" }}>
-                  <b>Get unlimited projects</b>
+                  <b>Time to re-up?</b>
                 </div>
-                <div style={{ marginBottom: "12px" }}> $2.99 / month </div>
+                <div style={{ marginBottom: "12px" }}> $4.99 / 100 tickets</div>
 
                 <Link to="/upgrade">
-                  <Icon type="star-o" style={{ color: "#DDC482" }} /> Upgrade
-                  account
+                  <Icon type="star-o" style={{ color: "#DDC482" }} /> Purchase
+                  tickets
                 </Link>
               </ProjectCard>
             </div>
           </TabPane>
           <TabPane
             style={{ height: "600px" }}
-            
             tab={
               <span>
                 <Icon type="calendar" />Active Calendar
@@ -311,52 +304,26 @@ class Dashboard extends PureComponent {
             }
             key="2"
           >
-          <div className="calendar-mobile-alert">
-            
-          <Alert message="Please view Active Calendar on desktop or tablet. We're still figuring out our mobile calendar design. #sorrynotsorry  " type="warning" showIcon />
-            
-
-
-          </div>
-          <div className="calendar-pane">
-            <BigCalendar
-              events={inProgressTickets}
-              startAccessor="startDate"
-              endAccessor="endDate"
-              titleAccessor="title"
-              views={["month", "agenda"]}
-              popup={true}
-              selectable={true}
-              components={{
-                event: event => {
-                  return (
-                    <div
-                      onClick={() =>
-                        this.setState({
-                          calendar_ShowDetails: true,
-                          calendar_TicketNumber: event.event.ticketNumber,
-                          calendar_Project: event.event.project,
-                          calendar_Title: event.event.title,
-                          calendar_Description: event.event.description,
-                          calendar_Status: event.event.status,
-                          calendar_Estimate: event.event.eta
-                        })
-                      }
-                      style={{
-                        borderRadius: "5px",
-                        height: "23px",
-                        paddingLeft: "5px",
-                        backgroundColor: event.event.projectColor
-                      }}
-                    >
-                      {`#${event.event.ticketNumber} - ${event.event.project}`}
-                    </div>
-                  );
-                },
-                agenda: {
+            <div className="calendar-mobile-alert">
+              <Alert
+                message="Please view Active Calendar on desktop or tablet. We're still figuring out our mobile calendar design. #beta "
+                type="warning"
+                showIcon
+              />
+            </div>
+            <div className="calendar-pane">
+              <BigCalendar
+                events={inProgressTickets}
+                startAccessor="startDate"
+                endAccessor="endDate"
+                titleAccessor="title"
+                views={["month", "agenda"]}
+                popup={true}
+                selectable={true}
+                components={{
                   event: event => {
                     return (
-                      <span
+                      <div
                         onClick={() =>
                           this.setState({
                             calendar_ShowDetails: true,
@@ -368,21 +335,48 @@ class Dashboard extends PureComponent {
                             calendar_Estimate: event.event.eta
                           })
                         }
+                        style={{
+                          borderRadius: "5px",
+                          height: "23px",
+                          paddingLeft: "5px",
+                          backgroundColor: event.event.projectColor
+                        }}
                       >
-                        <span style={{ color: event.event.projectColor }}>
-                          {` ${event.event.project} - #${
-                            event.event.ticketNumber
-                          }: `}
-                        </span>
-                        {event.event.title}
-                      </span>
+                        {`#${event.event.ticketNumber} - ${
+                          event.event.project
+                        }`}
+                      </div>
                     );
+                  },
+                  agenda: {
+                    event: event => {
+                      return (
+                        <span
+                          onClick={() =>
+                            this.setState({
+                              calendar_ShowDetails: true,
+                              calendar_TicketNumber: event.event.ticketNumber,
+                              calendar_Project: event.event.project,
+                              calendar_Title: event.event.title,
+                              calendar_Description: event.event.description,
+                              calendar_Status: event.event.status,
+                              calendar_Estimate: event.event.eta
+                            })
+                          }
+                        >
+                          <span style={{ color: event.event.projectColor }}>
+                            {` ${event.event.project} - #${
+                              event.event.ticketNumber
+                            }: `}
+                          </span>
+                          {event.event.title}
+                        </span>
+                      );
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
             </div>
-            
           </TabPane>
           <TabPane
             tab={
@@ -503,6 +497,37 @@ class Dashboard extends PureComponent {
   }
 
   componentDidMount() {
+    // GET USERs CREDITS...
+
+    fire
+      .database()
+      .ref(`/credits/${this.props.user.id}/`)
+      .on(
+        "value",
+        function(snapshot) {
+          console.log("user has tickets?", snapshot.val());
+
+          if (snapshot.val()) {
+            console.log("something is or has been here..");
+
+            this.props.setTicketCredit(snapshot.val().tickets)
+
+          } else {
+            // first time logging in.
+
+            let updates = {};
+            updates[`credits/${this.props.user.id}/tickets`] = 5;
+
+            this.props.setTicketCredit(5)
+
+            fire
+              .database()
+              .ref()
+              .update(updates);
+          }
+        }.bind(this)
+      );
+
     // GRAB PROJECTS
 
     fire
@@ -558,7 +583,6 @@ class Dashboard extends PureComponent {
       <LolipopAdmin>
         <Navigation />
         <UI.PageContainer>
-         
           <UI.Box>{this.renderProjects()}</UI.Box>
         </UI.PageContainer>
 
@@ -630,9 +654,10 @@ const mapStateToProps = ({
   projects,
   inProgressTickets,
   activeProjectId,
-  notes
+  notes,
+  ticketCredit
 }) => {
-  return { user, projects, inProgressTickets, activeProjectId, notes };
+  return { user, projects, inProgressTickets, activeProjectId, notes, ticketCredit };
 };
 
 const mapDispatchToProps = dispatch => {
@@ -656,6 +681,11 @@ const mapDispatchToProps = dispatch => {
       dispatch({
         type: `SET_NOTES`,
         notes
+      }),
+      setTicketCredit: credit =>
+      dispatch({
+        type: `SET_CREDIT`,
+        credit
       })
   };
 };

@@ -10,7 +10,6 @@ import { CirclePicker } from "react-color";
 
 import firebase from "firebase";
 
-
 import { getQueryVariable } from "../utils/app-utils";
 
 import moment from "moment";
@@ -59,85 +58,94 @@ class IndexPage extends PureComponent {
   googleAuth() {
     let provider = new firebase.auth.GoogleAuthProvider();
 
-    fire.auth().signInWithPopup(provider).then(function(result) {
-      var token = result.credential.accessToken;
-      var user = result.user;
-      console.log("USER", user);
+    fire
+      .auth()
+      .signInWithPopup(provider)
+      .then(
+        function(result) {
+          var token = result.credential.accessToken;
+          var user = result.user;
+          console.log("USER", user);
 
-      var userObj = {
-         authenticated: true,
-         id: user.uid,
-         type: `ADMIN`,
-         email: user.email,
-         photoURL: user.photoURL,
-         name: user.displayName,
-         githubToken: token
-      }
+          var userObj = {
+            authenticated: true,
+            id: user.uid,
+            type: `ADMIN`,
+            email: user.email,
+            photoURL: user.photoURL,
+            name: user.displayName,
+            githubToken: token
+          };
 
-      message.success(`Logged in as ${user.displayName}!`)
+          message.success(`Logged in as ${user.displayName}!`);
 
-      this.props.auth(userObj);
+          this.props.auth(userObj);
 
-      // ...
-    }.bind(this)).catch(function(error) {
-      // Handle Errors here.
-      var errorCode = error.code;
-      var errorMessage = error.message;
-      // The email of the user's account used.
-      var email = error.email;
-      // The firebase.auth.AuthCredential type that was used.
-      var credential = error.credential;
-      // ...
-      console.log("ERROR", errorMessage)
-      message.error("There was a problem logging you in!")
-    });
+          // ...
+        }.bind(this)
+      )
+      .catch(function(error) {
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        // The email of the user's account used.
+        var email = error.email;
+        // The firebase.auth.AuthCredential type that was used.
+        var credential = error.credential;
+        // ...
+        console.log("ERROR", errorMessage);
+        message.error("There was a problem logging you in!");
+      });
   }
 
   authenticate() {
-
     let provider = new firebase.auth.GithubAuthProvider();
-    provider.addScope('repo');
+    provider.addScope("repo");
 
-    fire.auth().signInWithPopup(provider).then(function(result) {
-      var token = result.credential.accessToken;
-      var user = result.user;
-      console.log("USER", user);
+    fire
+      .auth()
+      .signInWithPopup(provider)
+      .then(
+        function(result) {
+          var token = result.credential.accessToken;
+          var user = result.user;
+          console.log("USER", user);
 
-      var userObj = {
-         authenticated: true,
-         id: user.uid,
-         type: `ADMIN`,
-         email: user.email,
-         photoURL: user.photoURL,
-         name: user.displayName,
-         githubToken: token
-      }
+          // check credits..
+          var userObj = {
+            authenticated: true,
+            id: user.uid,
+            type: `ADMIN`,
+            email: user.email,
+            photoURL: user.photoURL,
+            name: user.displayName,
+            githubToken: token,
+          };
 
-      message.success(`Logged in as ${user.displayName}!`)
+          message.success(`Logged in as ${user.displayName}!`);
 
-      this.props.auth(userObj);
+          this.props.auth(userObj);
 
-      // ...
-    }.bind(this)).catch(function(error) {
-      // Handle Errors here.
-      var errorCode = error.code;
-      var errorMessage = error.message;
-      // The email of the user's account used.
-      var email = error.email;
-      // The firebase.auth.AuthCredential type that was used.
-      var credential = error.credential;
-      // ...
-      console.log("ERROR", errorMessage)
-      message.error("There was a problem logging you in!")
-    });
-
-
+          // ...
+        }.bind(this)
+      )
+      .catch(function(error) {
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        // The email of the user's account used.
+        var email = error.email;
+        // The firebase.auth.AuthCredential type that was used.
+        var credential = error.credential;
+        // ...
+        console.log("ERROR", errorMessage);
+        message.error("There was a problem logging you in!");
+      });
   }
 
   render() {
-
-    if ( this.props.user && this.props.user.authenticated ) {
-        return <Redirect to="/projects" />
+    if (this.props.user && this.props.user.authenticated) {
+      return <Redirect to="/projects" />;
     }
 
     return (
@@ -176,12 +184,10 @@ class IndexPage extends PureComponent {
               onClick={() => this.googleAuth()}
               size="large"
               type="default"
-              style={{ width: "100%", }}
-              
+              style={{ width: "100%" }}
             >
               <Icon type="google" /> Google
             </Button>
-            
           </div>
         </div>
       </div>
@@ -190,7 +196,7 @@ class IndexPage extends PureComponent {
 }
 
 const mapStateToProps = ({ user }) => {
-  return { user  };
+  return { user };
 };
 
 const mapDispatchToProps = dispatch => {

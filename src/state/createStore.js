@@ -12,7 +12,7 @@ const reducer = (state, action) => {
 
   if ( action.type === `SIGNOUT` ) {
     return Object.assign({}, state, {
-      user: {}
+      user: null
     });
   }
 
@@ -58,6 +58,12 @@ const reducer = (state, action) => {
     });
   }
 
+  if (action.type === `SET_CREDIT`) {
+    return Object.assign({}, state, {
+      ticketCredit: action.credit
+    });
+  }
+
 
   return state;
 };
@@ -75,6 +81,7 @@ const initialState = {
   projects: [],
   activeProjectId: "",
   nextTicketNumber: 1000,
+  ticketCredit: 0,
 
   tickets: [], // all app tickets
   ticketsByProject: [], // tickets for active project
