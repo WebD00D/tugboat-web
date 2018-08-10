@@ -767,6 +767,10 @@ class Project extends PureComponent {
         );
       });
 
+
+      // const showEditFooter = Number(this.props.ticketCredit) === 0 ? false : true;
+      // console.log("SHOW FOOTER", showEditFooter)
+
     return (
       <LolipopAdmin>
         <Navigation
@@ -938,16 +942,23 @@ class Project extends PureComponent {
 
         {/* EDIT TICKET MODAL */}
 
+        
+
         <Modal
           title={`Ticket #${this.state.edit_ticketNumber}`}
           visible={this.state.show_edit_modal}
-          onOk={() => this.editTicket()}
-          onCancel={() => this.setState({ show_edit_modal: false })}
           okText="Save ticket"
-          footer={this.props.ticketCredit === 0 ? false : true}
+          onCancel={() => this.setState({ show_edit_modal: false })}
+          footer={[
+            <Button key="back" onClick={() => this.setState({ show_edit_modal: false })}>Cancel</Button>,
+            <Button disabled={Number(this.props.ticketCredit) === 0 } key="submit" type="primary" onClick={() => this.editTicket()}>
+              Save Ticket!
+            </Button>
+          ]}
+          
         >
           <UI.FormField>
-            <label>Ticket Title</label>
+            <label>Ticket Title {this.props.ticketCredit}</label>
             <Input
               value={this.state.edit_title}
               onChange={e => {
