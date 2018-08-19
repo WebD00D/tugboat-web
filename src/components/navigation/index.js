@@ -1,14 +1,12 @@
-import React, { PureComponent } from "react";
-import { Route, Redirect, Link } from "react-router-dom";
-import fire from "../../fire";
+import React, { PureComponent } from 'react';
+import { Route, Redirect, Link } from 'react-router-dom';
+import fire from '../../fire';
 
+import firebase from 'firebase';
 
+import './index.css';
 
-import firebase from "firebase";
-
-import "./index.css";
-
-import "antd/dist/antd.css";
+import 'antd/dist/antd.css';
 import {
   Button,
   Icon,
@@ -22,9 +20,9 @@ import {
   Alert,
   Tabs,
   Tag
-} from "antd";
+} from 'antd';
 
-import { connect } from "react-redux";
+import { connect } from 'react-redux';
 
 class Navigation extends PureComponent {
   constructor(props) {
@@ -34,13 +32,13 @@ class Navigation extends PureComponent {
   }
 
   signout() {
-    console.log("SIGN OUT");
+    console.log('SIGN OUT');
     firebase
       .auth()
       .signOut()
       .then(function() {
         // Sign-out successful.
-        message.success("signed out successfully");
+        message.success('signed out successfully');
       })
       .catch(function(error) {
         // An error happened.
@@ -51,15 +49,21 @@ class Navigation extends PureComponent {
   }
 
   render() {
+
+     if (!this.props.user) {
+      console.log("NO USER?", this.props.user)
+      return <Redirect to="/" />;
+    }
+
     const profileMenu = (
       <Menu>
-        <div style={{ padding: "5px 12px" }}>
+        <div style={{ padding: '5px 12px' }}>
           <div>
             <b>{this.props.user.name}</b>
           </div>
           <div>{this.props.user.email}</div>
         </div>
-        <Divider style={{ marginTop: "12px", marginBottom: "12px" }} />
+        <Divider style={{ marginTop: '12px', marginBottom: '12px' }} />
         <Menu.Item>
           <div
             onClick={() => {
@@ -80,16 +84,19 @@ class Navigation extends PureComponent {
       </Menu>
     );
 
-    if (this.state.justSignedOut) {
-      return <Redirect to="/" />;
-    }
 
-    let noTixMessage = this.props.collab ? "Feeling generous? Get your beloved freelancer 100 more for $4.99" : "Click here to get more."
+   
+    let noTixMessage = this.props.collab
+      ? 'Feeling generous? Get your beloved freelancer 100 more for $4.99'
+      : 'Click here to get more.';
+
+
+      console.log("NO USER?", this.props.user)
 
     return (
       <div>
-        {this.props.ticketCredit === 0  ? (
-          <Link to="/">
+        {this.props.ticketCredit === 0 ? (
+          <Link to="/get-tickets">
             <Alert
               message="No tickets left!"
               description={noTixMessage}
@@ -97,42 +104,40 @@ class Navigation extends PureComponent {
               showIcon
               banner
             />
-            
           </Link>
         ) : (
-          ""
+          ''
         )}
 
         <div className="nav">
-       
           <h1
             style={{
-              color: "#1890ff",
-              marginBottom: "0px",
-              display: "flex",
-              alignItems: "center"
+              color: '#1890ff',
+              marginBottom: '0px',
+              display: 'flex',
+              alignItems: 'center'
             }}
           >
             <img
-              style={{ height: "40px", marginRight: "8px" }}
-              src={require("../../assets/icons/steering-wheel.svg")}
-            />{" "}
+              style={{ height: '40px', marginRight: '8px' }}
+              src={require('../../assets/icons/steering-wheel.svg')}
+            />{' '}
             <b>tugboat</b>
           </h1>
 
           {this.props.collab ? (
             <div>
-              <div style={{ textAlign: "right" }}>
+              <div style={{ textAlign: 'right' }}>
                 <small>Collaborating as:</small>
               </div>
 
-              <Tag style={{ marginRight: "0px" }} color="#108ee9">
+              <Tag style={{ marginRight: '0px' }} color="#108ee9">
                 {this.props.collaborator}
               </Tag>
             </div>
           ) : (
             <div className="nav-buttons">
-              <Tag color={this.props.ticketCredit == 0 ? "red" : ""}>
+              <Tag color={this.props.ticketCredit == 0 ? 'red' : ''}>
                 tickets: {this.props.ticketCredit}
               </Tag>
 
@@ -151,7 +156,7 @@ class Navigation extends PureComponent {
               });
             }}
             className="mobile-menu-icon"
-            style={{ fontSize: "30px" }}
+            style={{ fontSize: '30px' }}
             type="ellipsis"
           />
           {this.state.mobileMenu ? (
@@ -174,23 +179,23 @@ class Navigation extends PureComponent {
               <div to="/" className="mobile-menu__item">
                 <h1
                   style={{
-                    color: "#1890ff",
-                    marginBottom: "0px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
+                    color: '#1890ff',
+                    marginBottom: '0px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                 >
                   <img
-                    style={{ height: "40px", marginRight: "8px" }}
-                    src={require("../../assets/icons/steering-wheel.svg")}
-                  />{" "}
+                    style={{ height: '40px', marginRight: '8px' }}
+                    src={require('../../assets/icons/steering-wheel.svg')}
+                  />{' '}
                   <b>tugboat</b>
                 </h1>
               </div>
             </div>
           ) : (
-            ""
+            ''
           )}
         </div>
       </div>
@@ -208,7 +213,6 @@ const mapDispatchToProps = dispatch => {
       dispatch({
         type: `SIGNOUT`
       })
-      
   };
 };
 

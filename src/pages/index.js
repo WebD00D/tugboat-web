@@ -164,13 +164,11 @@ class IndexPage extends PureComponent {
               <b>tugboat </b>
               <small style={{ fontSize: "12px" }}>beta</small>
             </h1>
-            <div>
-              <small>( like.. we don't even have a real logo yet )</small>
-            </div>
+            
           </div>
 
           <div style={{ padding: "20px", paddingTop: "0px" }}>
-            <h2 style={{ textAlign: "center" }}> Login to get started </h2>
+            <h2 style={{ textAlign: "center" }}> Sign in to get started</h2>
             <Button
               onClick={() => this.authenticate()}
               size="large"

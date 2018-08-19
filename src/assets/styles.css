@@ -217,3 +217,15 @@ button {
     height: 70px;
   }
 }
+
+
+/* PURCHASE TICKETS */
+.active-ticket {
+  color: rgb(82, 196, 26);
+  font-size: 20px;
+}
+
+.inactive-ticket {
+  color: #ccc;
+  font-size: 20px;
+}
