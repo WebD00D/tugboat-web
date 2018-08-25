@@ -212,7 +212,7 @@ class GetTickets extends PureComponent {
         // You can access the token ID with `token.id`.
         // Get the token ID to your server-side code for use.
         const dev = false;
-        const env = dev ? 'http://localhost:8091' : 'https://tugboatapi.herokuapp.com/'
+        const env = dev ? 'http://localhost:8091' : 'https://tugboatapi.herokuapp.com'
         fetch(
           `${env}/payment?token=${token.id}&amount=${amount}`
         )
