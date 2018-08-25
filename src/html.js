@@ -36,6 +36,8 @@ module.exports = props => {
         <script src="https://use.fontawesome.com/9aa665cf7f.js"></script>
         <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBu0azHVEJf3dYGGq1s8Ck3LMZKFZIRORI&libraries=drawing" />
         <script src="https://cdn.jsdelivr.net/npm/js-map-label@1.0.1/src/maplabel-compiled.js" />
+        <script src="https://checkout.stripe.com/checkout.js"></script>
+
 
       </head>
       <body className="sans-serif black">

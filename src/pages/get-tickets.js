@@ -171,12 +171,90 @@ class GetTickets extends PureComponent {
   constructor(props) {
     super(props);
 
+    this.handleCheckout = this.handleCheckout.bind(this);
+
     this.state = {
-      activeTicket: ''
+      activeTicket: '',
+      token: 'NOT SET',
+      checkoutText: 'Checkout'
     };
   }
 
   componentDidMount() {}
+
+  handleCheckout() {
+    this.setState({
+      checkoutText: '...'
+    });
+
+    let amount;
+
+    switch (this.state.activeTicket) {
+      case '50':
+        amount = 199;
+        break;
+      case '100':
+        amount = 349;
+        break;
+      case '250':
+        amount = 599;
+        break;
+      default:
+        amount = 50;
+        break;
+    }
+
+    const handler = StripeCheckout.configure({
+      key: 'pk_test_4MuZQsjjPxygGfpjv1SRbbrX',
+      image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+      locale: 'auto',
+      token: function(token) {
+        // You can access the token ID with `token.id`.
+        // Get the token ID to your server-side code for use.
+        fetch(
+          `http://localhost:8091/payment?token=${token.id}&amount=${amount}`
+        )
+          .then(function(response) {
+            return response.json();
+          })
+          .then(function(r) {
+            console.log('RESPONSE', r);
+
+            if (r.paid) {
+              // Update Users Tickets..
+              // Save Transaction Id's
+
+              let updates = {};
+
+              let ticketsToAdd = Number(this.state.activeTicket);
+
+              updates[`/credits/${this.props.user.id}/tickets/`] =
+                Number(this.props.ticketCredit) + ticketsToAdd;
+
+              fire
+                .database()
+                .ref()
+                .update(updates);
+
+              message.success(`Added ${this.state.activeTicket} tickets!`);
+
+            }
+          }.bind(this));
+
+        this.setState({
+          token: token.id,
+          checkoutText: 'Checkout'
+        });
+
+      }.bind(this)
+    });
+
+    handler.open({
+      name: 'Tugboat',
+      description: `${this.state.activeTicket} tickets`,
+      amount: amount
+    });
+  }
 
   render() {
     if (this.state.ticketId) {
@@ -187,6 +265,8 @@ class GetTickets extends PureComponent {
       <LolipopAdmin>
         <Navigation />
         <UI.PageContainer>
+        <Link to="/projects"><Icon type="arrow-left" /> Back to Projects</Link>
+
           <TicketContainer>
             <UI.Box>
               <h1>Purchase Tickets</h1>
@@ -208,7 +288,7 @@ class GetTickets extends PureComponent {
                 <ListItem
                   onClick={() => this.setState({ activeTicket: '100' })}
                 >
-                   <div>
+                  <div>
                     <h2>100 Tickets </h2>
                     $3.49
                   </div>
@@ -224,7 +304,7 @@ class GetTickets extends PureComponent {
                 <ListItem
                   onClick={() => this.setState({ activeTicket: '250' })}
                 >
-                   <div>
+                  <div>
                     <h2>250 Tickets </h2>
                     $5.99
                   </div>
@@ -237,31 +317,17 @@ class GetTickets extends PureComponent {
                     type="check-circle"
                   />
                 </ListItem>
-                <ListItem
-                  onClick={() => this.setState({ activeTicket: '500' })}
-                >
-                  <div>
-                    <h2>500 Tickets </h2>
-                    $12.49
-                  </div>
-                  <Icon
-                    className={
-                      this.state.activeTicket === '500'
-                        ? 'active-ticket'
-                        : 'inactive-ticket'
-                    }
-                    type="check-circle"
-                  />
-                </ListItem>
               </List>
-             <div style={{display: "flex", justifyContent: "center"}}>
-             <Button
-                style={{ marginTop: '15px', width: '250px' }}
-                type="primary"
-                size="large"
-              >
-                Checkout
-              </Button></div> 
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Button
+                  onClick={() => this.handleCheckout()}
+                  style={{ marginTop: '15px', width: '250px' }}
+                  type="primary"
+                  size="large"
+                >
+                  {this.state.checkoutText}
+                </Button>
+              </div>
             </UI.Box>
           </TicketContainer>
         </UI.PageContainer>

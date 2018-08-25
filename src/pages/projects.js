@@ -286,9 +286,9 @@ class Dashboard extends PureComponent {
                 <div style={{ marginBottom: "1px" }}>
                   <b>Time to re-up?</b>
                 </div>
-                <div style={{ marginBottom: "12px" }}> $4.99 / 100 tickets</div>
+                <div style={{ marginBottom: "12px" }}> $1.99 / 50 tickets</div>
 
-                <Link to="/upgrade">
+                <Link to="/get-tickets">
                   <Icon type="star-o" style={{ color: "#DDC482" }} /> Purchase
                   tickets
                 </Link>
