@@ -692,9 +692,17 @@ class Project extends PureComponent {
   }
 
   render() {
+
+    if (!this.props.user) {
+      console.log("NO USER", this.props.user)
+      return <Redirect to="/" />;
+    }
+
     if (this.state.projectDeleted) {
       return <Redirect to="/projects" />;
     }
+
+    
 
     let inProgressCount = 0;
     let verifyingCount = 0;

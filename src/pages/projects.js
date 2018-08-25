@@ -574,6 +574,12 @@ class Dashboard extends PureComponent {
   }
 
   render() {
+
+    if (!this.props.user) {
+      console.log("NO USER", this.props.user)
+      return <Redirect to="/" />;
+    }
+    
     if (this.state.ticketId) {
       return <Redirect to={`/project?pid=${this.state.ticketId}`} />;
     }
