@@ -247,7 +247,6 @@ class Dashboard extends PureComponent {
           inProgressTickets.push(ticket);
         });
 
-      let views = window.innerWidth <= 700 ? "agenda" : ["month", "agenda"];
 
       return (
         <Tabs defaultActiveKey="1">

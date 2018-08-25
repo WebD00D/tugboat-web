@@ -741,11 +741,11 @@ class Project extends PureComponent {
       ArchiveCount = archive.length;
     }
 
-    const projectLastUpdated = moment(
+    const projectLastUpdated = this.props.projects[this.props.activeProjectId] && moment(
       this.props.projects[this.props.activeProjectId].lastUpdated
     ).format("MM.DD.YY, h:mm a");
 
-    const collaborators =
+    const collaborators = this.props.projects[this.props.activeProjectId] &&
       this.props.projects[this.props.activeProjectId].collaborators &&
       Object.keys(
         this.props.projects[this.props.activeProjectId].collaborators

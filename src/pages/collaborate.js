@@ -640,7 +640,7 @@ class Collaborate extends PureComponent {
       ArchiveCount = archive.length;
     }
 
-    const projectLastUpdated = moment(this.props.projects.lastUpdated).format(
+    const projectLastUpdated = this.props.projects.lastUpdated && moment(this.props.projects.lastUpdated).format(
       "MM.DD.YY @h:mm a"
     );
 
